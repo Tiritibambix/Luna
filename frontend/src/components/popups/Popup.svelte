@@ -93,6 +93,8 @@
   .popup {
     inset: unset;
 
+    z-index: 1;
+
     border: 0;
     padding: dimensions.$gapSmall;
     border-radius: dimensions.$borderRadius;
@@ -107,7 +109,11 @@
     position-try-fallbacks: bottom, right, left;
     position-try-order: most-width;
 
-    margin: dimensions.$gapSmall;
+    anchor-name: --popup;
+    anchor-scope: --popup;
+
+    --distance: #{dimensions.$gapSmall};
+    margin: var(--distance);
 
     opacity: 0;
     transition: opacity animations.$animationSpeed;
@@ -142,6 +148,32 @@
   .tooltip {
     pointer-events: none;
   }
+
+  .popup::before {
+    content: "";
+  
+    z-index: -1;
+
+    background-color: inherit;
+
+    --size: calc(var(--distance) / 1.41421356 * 2);
+    width: var(--size);
+    height: var(--size);
+
+    position: fixed;
+    left: clamp(
+      anchor(--popup left),
+      anchor(var(--anchor) center),
+      anchor(--popup right),
+    );
+    top: clamp(
+      anchor(--popup top),
+      anchor(var(--anchor) center),
+      anchor(--popup bottom),
+    );
+
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
 </style>
 
 <!-- The typecast to "auto" is because the linter does not yet know about "hint" -->
@@ -149,7 +181,7 @@
   bind:this={popover}
   class="popup"
   popover={(tooltip ? "hint" : "auto") as "auto"}
-  style={`position-anchor: --anchor-${anchorName};`}
+  style={`--anchor: --anchor-${anchorName}; position-anchor: var(--anchor);`}
   id={`${tooltip ? "tooltip" : "popup"}-${anchorName}`}
   class:visible={visible}
   class:tooltip={tooltip}
