@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { untrack, type Snippet } from "svelte";
   import { NoOp } from "../../lib/client/placeholders";
 
   interface Props {
@@ -23,18 +23,20 @@
   let visible = $state(false);
   let popover: (HTMLElement | undefined) = $state();
   let anchorElement = $derived(anchor || (!popover ? undefined : popover.parentElement))
-  let anchorName = $derived(`${Math.floor(Math.random() * 100000000)}-${anchorElement?.classList.values().toArray().join("-")}`);
+  let proposedAnchorName = $derived(`${Math.floor(Math.random() * 100000000)}-${anchorElement?.classList.values().toArray().join("-")}`);
+  let anchorName = $state(untrack(() => $state.snapshot(proposedAnchorName)));
 
   let promiseResolve: () => void = $state(NoOp);
   let promiseReject: (reason?: any) => void = $state(NoOp);
 
   $effect(() => {
-    if (!anchorElement) return;
+    if (!visible || !anchorElement) return;
     // @ts-ignore
     const currentAnchor = anchorElement.style["anchor-name"] as string;
     if (currentAnchor.startsWith("--anchor-") && !currentAnchor.includes("undefined")) {
       anchorName = currentAnchor.substring(9);
     } else {
+      anchorName = proposedAnchorName;
       Object.assign(anchorElement.style, {
         "anchor-name": `--anchor-${anchorName}`,
       });
