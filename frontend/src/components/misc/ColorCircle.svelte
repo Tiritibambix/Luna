@@ -27,13 +27,13 @@
   }
 
   div.small {
-    width: 0.75em;
-    height: 0.75em;
+    width: 0.75rem;
+    height: 0.75rem;
   }
 
   div.medium {
-    width: 1.5em;
-    height: 1.5em;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   div.fill {

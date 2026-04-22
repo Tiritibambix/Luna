@@ -150,11 +150,11 @@
   }
 
   button.month {
-    width: 2em;
+    width: 2rem;
   }
 
   button.year {
-    width: 3em;
+    width: 3rem;
   }
 </style>
 

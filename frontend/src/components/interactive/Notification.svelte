@@ -104,7 +104,7 @@
     opacity: 0.2;
     content: "";
     width: 100%;
-    height: 0.5em;
+    height: 0.5rem;
     animation: notification-timer var(--notificationExpireTime) linear forwards;
   }
 
@@ -121,7 +121,7 @@
     right: dimensions.$gapSmall;
     background-color: rgba(0, 0, 0, 0.2);
     border-radius: 50%;
-    height: 1.4em;
+    height: 1.4rem;
     aspect-ratio: 1/1;
     font-size: text.$fontSizeSmall;
     display: grid;

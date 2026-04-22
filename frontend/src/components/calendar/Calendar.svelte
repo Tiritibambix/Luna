@@ -179,7 +179,7 @@
     text-align: center;
   }
   div.weekdays.padded {
-    padding-left: calc(1.7em + dimensions.$gapSmaller);
+    padding-left: calc(1.7rem + dimensions.$gapSmaller);
   }
 
   div.monthAnimation {
@@ -221,7 +221,7 @@
   div.weekNumbers {
     display: grid;
     flex-direction: column;
-    width: 1.7em;
+    width: 1.7rem;
   }
   
   div.weekNumber {

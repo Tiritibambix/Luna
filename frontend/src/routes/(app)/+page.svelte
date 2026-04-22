@@ -229,9 +229,9 @@
     display: flex;
     flex-direction: column;
     gap: dimensions.$gapLarge;
-    min-width: 10em;
+    min-width: 10rem;
     width: 20vw;
-    max-width: 20em;
+    max-width: 20rem;
     grid-area: aside;
   }
 
