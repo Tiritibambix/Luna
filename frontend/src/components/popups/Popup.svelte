@@ -23,8 +23,7 @@
   let visible = $state(false);
   let popover: (HTMLElement | undefined) = $state();
   let anchorElement = $derived(anchor || (!popover ? undefined : popover.parentElement))
-  let proposedAnchorName = $derived(`${Math.floor(Math.random() * 100000000)}-${anchorElement?.classList.values().toArray().join("-")}`);
-  let anchorName = $state(untrack(() => $state.snapshot(proposedAnchorName)));
+  let anchorName = $state();
 
   let promiseResolve: () => void = $state(NoOp);
   let promiseReject: (reason?: any) => void = $state(NoOp);
@@ -36,7 +35,7 @@
     if (currentAnchor.startsWith("--anchor-") && !currentAnchor.includes("undefined")) {
       anchorName = currentAnchor.substring(9);
     } else {
-      anchorName = proposedAnchorName;
+      anchorName = `${Math.floor(Math.random() * 100000000)}-${anchorElement?.classList.values().toArray().join("-")}`;
       Object.assign(anchorElement.style, {
         "anchor-name": `--anchor-${anchorName}`,
       });
