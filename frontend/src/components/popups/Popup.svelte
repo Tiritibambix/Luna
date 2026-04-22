@@ -97,7 +97,6 @@
 
     border: 0;
     padding: dimensions.$gapSmall;
-    border-radius: dimensions.$borderRadius;
     max-width: 30vw;
     box-shadow: decorations.$boxShadow;
     font-size: text.$fontSize;
@@ -114,6 +113,9 @@
 
     --distance: #{dimensions.$gapSmall};
     margin: var(--distance);
+
+    --currentBorderRadius: #{dimensions.$borderRadius};
+    border-radius: var(--currentBorderRadius);
 
     opacity: 0;
     transition: opacity animations.$animationSpeed;
@@ -173,6 +175,31 @@
     );
 
     transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .popup::after {
+    content: "";
+  
+    z-index: -1;
+
+    background-color: inherit;
+
+    width: calc(2 * var(--distance));
+    height: calc(2 * var(--distance));
+
+    position: fixed;
+    left: clamp(
+      calc(anchor(--popup left) + var(--distance)),
+      anchor(var(--anchor) center),
+      calc(anchor(--popup right) - var(--distance)),
+    );
+    top: clamp(
+      calc(anchor(--popup top) + var(--distance)),
+      anchor(var(--anchor) center),
+      calc(anchor(--popup bottom) - var(--distance)),
+    );
+
+    transform: translate(-50%, -50%);
   }
 </style>
 
