@@ -52,8 +52,7 @@
 
   let eventEndsThisWeek = $derived(remainingDays == remainingDaysThisWeek);
 
-  let currentlyHoveredEvent = $state((getContext("currentlyHoveredEvent") as () => (EventModel | null))());
-  let currentlyClickedEvent = $state((getContext("currentlyClickedEvent") as () => (EventModel | null))());
+  let mouseCalendarInteraction = getContext<{ hoveredEvent: string, clickedEvent: string }>("mouseCalendarInteraction");
 
   let showModal: ((initial?: EventModel, date?: Date) => Promise<EventModel>) = getContext("showEventModal");
 
@@ -67,26 +66,26 @@
   function mouseEnter() {
     if (event == null) return;
 
-    currentlyHoveredEvent = event;
+    mouseCalendarInteraction.hoveredEvent = event.id;
   }
   function mouseLeave() {
     if (event == null) return;
 
-    if (currentlyHoveredEvent == event)
-      currentlyHoveredEvent = null;
-    if (currentlyClickedEvent == event)
-      currentlyClickedEvent = null;
+    if (mouseCalendarInteraction.hoveredEvent == event.id)
+      mouseCalendarInteraction.hoveredEvent = "";
+    if (mouseCalendarInteraction.clickedEvent == event.id)
+      mouseCalendarInteraction.clickedEvent = "";
   }
   function mouseDown() {
     if (event == null) return;
 
-    currentlyClickedEvent = event;
+    mouseCalendarInteraction.clickedEvent = event.id;
   }
   function mouseUp() {
     if (event == null) return;
 
-    if (currentlyClickedEvent == event) {
-      currentlyClickedEvent = null;
+    if (mouseCalendarInteraction.clickedEvent == event.id) {
+      mouseCalendarInteraction.clickedEvent = "";
       showModal(event).then(newEvent => event = newEvent).catch(NoOp);
       element?.blur();
     }
@@ -194,8 +193,8 @@
     bind:this={element}
     class:start={isEventStart}
     class:end={eventEndsThisWeek}
-    class:hover={currentlyHoveredEvent == event}
-    class:active={currentlyClickedEvent == event}
+    class:hover={mouseCalendarInteraction.hoveredEvent == event.id}
+    class:active={mouseCalendarInteraction.clickedEvent == event.id}
     class:hidden={!visible}
     class:foregroundBright={isBackgroundDark}
     class:foregroundDark={!isBackgroundDark}
@@ -210,7 +209,7 @@
     role="button"
     tabindex={isFirstDisplay ? 0 : -1}
     style="
-      background-color:{currentlyHoveredEvent == event ? GetEventHoverColor(event) : GetEventColor(event)};
+      background-color:{mouseCalendarInteraction.hoveredEvent == event.id ? GetEventHoverColor(event) : GetEventColor(event)};
       width: calc({(showOnlyCircle ? 1 : remainingDaysThisWeek) * 100}% - {((isEventStart ? 1 : 0) + (eventEndsThisWeek ? 1 : 0)) * (showOnlyCircle ? 0 : 1)} * var(--gapBetweenDays));
       z-index: {16 - getDayIndex(date)};
     "

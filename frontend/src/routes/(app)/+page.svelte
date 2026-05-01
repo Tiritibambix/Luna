@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { Github } from "svelte-simples"
   import { Copyleft, PlusIcon, RefreshCw, Settings, WifiOff } from "lucide-svelte";
   import { setContext, untrack } from "svelte";
 
