@@ -15,7 +15,7 @@
   div {
     border-radius: dimensions.$borderRadius;
     max-width: 50vw;
-    min-width: 30em;
+    min-width: 30rem;
     padding: dimensions.$gapLarge dimensions.$gapLarger dimensions.$gapLarger dimensions.$gapLarger;
     border-radius: dimensions.$borderRadius;
     display: flex;

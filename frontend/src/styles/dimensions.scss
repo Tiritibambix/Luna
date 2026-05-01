@@ -5,36 +5,36 @@ $multiplier: var(--uiScaling, 1);
 $test: 1;
 
 /* Gaps */
-$gapTiny: 0.2em;
-$gapSmaller: 0.25em;
-$gapSmall: 0.5em;
-$gapMiddle: 0.75em;
-$gapLarge: 1em;
-$gapLarger: 2em;
+$gapTiny: 0.2rem;
+$gapSmaller: 0.25rem;
+$gapSmall: 0.5rem;
+$gapMiddle: 0.75rem;
+$gapLarge: 1rem;
+$gapLarger: 2rem;
 
 /* Border Radius */
-$borderRadiusSmall: var(--borderRadiusSmall, .25em);
-$borderRadius: var(--borderRadius, .5em);
-$borderRadiusLarge: var(--borderRadiusLarge, 1em);
+$borderRadiusSmall: var(--borderRadiusSmall, .25rem);
+$borderRadius: var(--borderRadius, .5rem);
+$borderRadiusLarge: var(--borderRadiusLarge, 1rem);
 
 /* Navbar */
-$navbarHeight: 3em;
-$navbarHeightSmall: 2em;
+$navbarHeight: 3rem;
+$navbarHeightSmall: 2rem;
 
 /* Images */
-$imageHeightSmall: 3em;
-$imageHeight: 5em;
-$imageHeightLarge: 10em;
+$imageHeightSmall: 3rem;
+$imageHeight: 5rem;
+$imageHeightLarge: 10rem;
 
 /* Blur */
-$blur: 0.15em;
-$blurLarge: 0.5em;
+$blur: 0.15rem;
+$blurLarge: 0.5rem;
 
 /* Lines */
-$borderWidth: .1em;
-$underlineWidth: .15em;
-$barFocusIndicatorWidth: .3em;
+$borderWidth: .1rem;
+$underlineWidth: .15rem;
+$barFocusIndicatorWidth: .3rem;
 
 /* Buttons */
-$buttonMinWidth: 5em;
-$buttonMinWidthCompact: 3em;
+$buttonMinWidth: 5rem;
+$buttonMinWidthCompact: 3rem;

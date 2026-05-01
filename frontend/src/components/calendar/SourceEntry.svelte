@@ -57,7 +57,7 @@
 
   div {
     color: color-mix(in srgb, colors.$foregroundPrimary 50%, transparent);
-    height: 1.25em;
+    height: 1.25rem;
     display: flex;
     justify-content: space-between;
     align-items: center;

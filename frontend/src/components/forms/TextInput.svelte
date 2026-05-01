@@ -132,7 +132,7 @@
     justify-content: center;
     position: relative;
 
-    border-radius: calc(dimensions.$borderRadius + 0.1em);
+    border-radius: calc(dimensions.$borderRadius + 0.1rem);
     padding: 0 dimensions.$gapSmall;
     width: 100%;
     overflow: hidden;

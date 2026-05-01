@@ -86,7 +86,7 @@
     flex-direction: column;
     gap: dimensions.$gapLarge;
     position: relative;
-    border-radius: calc(dimensions.$borderRadius + 0.1em);
+    border-radius: calc(dimensions.$borderRadius + 0.1rem);
     overflow: hidden;
   }
 

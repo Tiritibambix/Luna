@@ -192,18 +192,18 @@
   @use "../../styles/text.scss";
 
   div.container {
-    --barSize: 0.4em;
-    --barSizeFocus: 0.7em;
-    --handleSize: 1em;
-    --detentSize: 1em;
-    --detentWidth: 0.2em;
+    --barSize: 0.4rem;
+    --barSizeFocus: 0.7rem;
+    --handleSize: 1rem;
+    --detentSize: 1rem;
+    --detentWidth: 0.2rem;
     --backgroundBase: #{colors.$backgroundSecondary};
     --backgroundFilled: #{colors.$backgroundAccent};
     --baseAnimationSpeeed: #{animations.$animationSpeed};
 
     height: var(--detentSize);
-    margin-top: 1.25em;
-    margin-bottom: .25em;
+    margin-top: 1.25rem;
+    margin-bottom: .25rem;
     --indent: #{dimensions.$gapSmall};
     width: calc(100% - 2 * var(--indent));
     margin-left: var(--indent);
@@ -258,14 +258,14 @@
 
   div.detent span {
     position: absolute;
-    bottom: calc(50% + var(--detentSize) / 2 + 0.25em);
+    bottom: calc(50% + var(--detentSize) / 2 + 0.25rem);
     font-size: text.$fontSizeSmall;
     left: 0;
     right: 0;
     margin: auto;
     text-align: center;
-    margin-left: -2em;
-    margin-right: -2em;
+    margin-left: -2rem;
+    margin-right: -2rem;
     transform: translateX(0.5ch);
     box-sizing: content-box;
   }

@@ -3,7 +3,7 @@
   @use "../../styles/colors.scss";
   @use "../../styles/dimensions.scss";
 
-  $dotSize: 0.3em;
+  $dotSize: 0.3rem;
 
   .loader {
     display: inline-flex;

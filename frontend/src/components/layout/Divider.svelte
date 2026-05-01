@@ -5,7 +5,7 @@
   hr {
     width: 100%;
     color: colors.$backgroundSecondary; 
-    border: solid .1em;
+    border: solid .1rem;
     border-radius: dimensions.$borderRadius;
   }
 </style>

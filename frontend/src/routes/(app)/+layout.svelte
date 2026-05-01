@@ -168,9 +168,9 @@
 
   div.notifications {
     position: fixed;
-    left: calc(100vw - 15em - dimensions.$gapSmall);
+    left: calc(100vw - 15rem - dimensions.$gapSmall);
     top: calc(100vh - dimensions.$gapSmaller);
-    width: 15em;
+    width: 15rem;
     height: 0;
     background-color: transparent;
     outline: 0;

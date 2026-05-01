@@ -88,7 +88,7 @@
   }
 
   span.time {
-    width: 1.25em;
+    width: 1.25rem;
     text-align: center;
     position: relative;
   }
@@ -117,8 +117,8 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    margin-top: 5em;
-    margin-bottom: 7em + dimensions.$gapSmall;
+    margin-top: 5rem;
+    margin-bottom: 7rem + dimensions.$gapSmall;
     font-family: text.$fontFamilyTime;
   }
 
@@ -137,11 +137,11 @@
     .radial-#{$i}\/12 {
       position: absolute;
       top: 0;
-      left: calc(50% - 1em);
-      transform: translate(5em * math.sin($angle), -5em * math.cos($angle));
-      width: 1.25em;
+      left: calc(50% - 1rem);
+      transform: translate(5rem * math.sin($angle), -5rem * math.cos($angle));
+      width: 1.25rem;
       text-align: center;
-      height: 1.25em;
+      height: 1.25rem;
     }
   }
 </style>

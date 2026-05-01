@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { untrack, type Snippet } from "svelte";
   import { NoOp } from "../../lib/client/placeholders";
 
   interface Props {
@@ -23,18 +23,19 @@
   let visible = $state(false);
   let popover: (HTMLElement | undefined) = $state();
   let anchorElement = $derived(anchor || (!popover ? undefined : popover.parentElement))
-  let anchorName = $derived(`${Math.floor(Math.random() * 100000000)}-${anchorElement?.classList.values().toArray().join("-")}`);
+  let anchorName = $state();
 
   let promiseResolve: () => void = $state(NoOp);
   let promiseReject: (reason?: any) => void = $state(NoOp);
 
   $effect(() => {
-    if (!anchorElement) return;
+    if (!visible || !anchorElement) return;
     // @ts-ignore
     const currentAnchor = anchorElement.style["anchor-name"] as string;
     if (currentAnchor.startsWith("--anchor-") && !currentAnchor.includes("undefined")) {
       anchorName = currentAnchor.substring(9);
     } else {
+      anchorName = `${Math.floor(Math.random() * 100000000)}-${anchorElement?.classList.values().toArray().join("-")}`;
       Object.assign(anchorElement.style, {
         "anchor-name": `--anchor-${anchorName}`,
       });
@@ -93,9 +94,10 @@
   .popup {
     inset: unset;
 
+    z-index: 1;
+
     border: 0;
     padding: dimensions.$gapSmall;
-    border-radius: dimensions.$borderRadius;
     max-width: 30vw;
     box-shadow: decorations.$boxShadow;
     font-size: text.$fontSize;
@@ -107,7 +109,14 @@
     position-try-fallbacks: bottom, right, left;
     position-try-order: most-width;
 
-    margin: dimensions.$gapSmall;
+    anchor-name: --popup;
+    anchor-scope: --popup;
+
+    --distance: #{dimensions.$gapSmall};
+    margin: var(--distance);
+
+    --currentBorderRadius: #{dimensions.$borderRadius};
+    border-radius: var(--currentBorderRadius);
 
     opacity: 0;
     transition: opacity animations.$animationSpeed;
@@ -142,6 +151,57 @@
   .tooltip {
     pointer-events: none;
   }
+
+  .popup::before {
+    content: "";
+  
+    z-index: -1;
+
+    background-color: inherit;
+
+    --size: calc(var(--distance) / 1.41421356 * 2);
+    width: var(--size);
+    height: var(--size);
+
+    position: fixed;
+    left: clamp(
+      anchor(--popup left),
+      anchor(var(--anchor) center),
+      anchor(--popup right),
+    );
+    top: clamp(
+      anchor(--popup top),
+      anchor(var(--anchor) center),
+      anchor(--popup bottom),
+    );
+
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  .popup::after {
+    content: "";
+  
+    z-index: -1;
+
+    background-color: inherit;
+
+    width: calc(2 * var(--distance));
+    height: calc(2 * var(--distance));
+
+    position: fixed;
+    left: clamp(
+      calc(anchor(--popup left) + var(--distance)),
+      anchor(var(--anchor) center),
+      calc(anchor(--popup right) - var(--distance)),
+    );
+    top: clamp(
+      calc(anchor(--popup top) + var(--distance)),
+      anchor(var(--anchor) center),
+      calc(anchor(--popup bottom) - var(--distance)),
+    );
+
+    transform: translate(-50%, -50%);
+  }
 </style>
 
 <!-- The typecast to "auto" is because the linter does not yet know about "hint" -->
@@ -149,7 +209,7 @@
   bind:this={popover}
   class="popup"
   popover={(tooltip ? "hint" : "auto") as "auto"}
-  style={`position-anchor: --anchor-${anchorName};`}
+  style={`--anchor: --anchor-${anchorName}; position-anchor: var(--anchor);`}
   id={`${tooltip ? "tooltip" : "popup"}-${anchorName}`}
   class:visible={visible}
   class:tooltip={tooltip}
