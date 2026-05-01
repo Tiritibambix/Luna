@@ -55,6 +55,7 @@
           date={date}
           visible={true}
           view="day"
+          slot={0}
         />
       {/each}
     </div>

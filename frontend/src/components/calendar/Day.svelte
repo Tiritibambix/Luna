@@ -42,6 +42,59 @@
   };
 
   let actualMaxEvents: number = $derived(maxEvents <= events.length - 1 ? maxEvents - 1 : maxEvents);
+
+  let eventSlots = $derived.by(() => {
+    if (!events) return new Map();
+
+    let dateQueue: Date[] = []; // this really should be a priority queue
+
+    const nonNullEvents = events.filter(x => x != null);
+
+    if (nonNullEvents.length == 0) return new Map();
+
+    dateQueue.push(nonNullEvents[0].date.start)
+
+    let slots: Date[] = [];
+    let eventIndex = 0;
+    let slotMap = new Map<string, number>();
+
+    while (dateQueue.length != 0) {
+      dateQueue = dateQueue.sort()
+      const currentDate = dateQueue.shift() as Date;
+
+      while (eventIndex < nonNullEvents.length && nonNullEvents[eventIndex].date.start.getTime() == currentDate.getTime()) {
+        slots.forEach(x => {
+          if (x.getTime() == currentDate.getTime()) {
+            x.setTime(0);
+          }
+        })
+
+        const event = nonNullEvents[eventIndex];
+
+        dateQueue.push(event.date.end);
+
+        let eventSlotIndex = slots.findIndex(x => x.getTime() == 0);
+        if (eventSlotIndex == -1) {
+          eventSlotIndex = slots.length;
+          slots.push(new Date(0));
+        }
+
+        slots[eventSlotIndex].setTime(event.date.end.getTime());
+
+        slotMap.set(event.id, eventSlotIndex);
+
+        eventIndex++;
+      }
+
+      if (eventIndex < nonNullEvents.length) {
+        dateQueue.push(nonNullEvents[eventIndex].date.start);
+      }
+    }
+    
+    return slotMap;
+  })
+
+  let slotCount = $derived(eventSlots.values().reduce((prev, cur) => Math.max(prev, cur), 0) + 1);
 </script>
 
 <style lang="scss">
@@ -151,8 +204,12 @@
 
     --topMargin: calc(#{text.$fontSize} + 2.5 * #{dimensions.$gapSmall});
     top: var(--topMargin);
-    height: calc(100% - var(--topMargin) - var(--gapBetweenDays));
+    height: calc(100% - var(--topMargin) - 2 * var(--gapBetweenDays));
     width: 100%;
+
+    &.schedule {
+      overflow: auto;
+    }
   }
 
   .otherMonth {
@@ -169,6 +226,7 @@
     <span class="top">
       <span class="date" class:sunday={date.getDay() === 0} class:today={isToday}>
         {date.getDate()}
+        {slotCount}
       </span>
       <span class="add">
         <IconButton onClick={createEventButtonClick} tabindex={-1} alt={t("button.add.event")}>
@@ -178,11 +236,11 @@
     </span>
   </div>
   {#if isFirstDay}
-    <div class="events" bind:offsetHeight={containerHeight}>
+    <div class="events" class:schedule={view != "month"} bind:offsetHeight={containerHeight}>
       {@render eventEntries()}
     </div>
   {:else}
-    <div class="events">
+    <div class="events" class:schedule={view != "month"}>
       {@render eventEntries()}
     </div>
   {/if}
@@ -210,6 +268,7 @@
         date={date}
         visible={i < actualMaxEvents}
         view={view}
+        slot={eventSlots.get(event?.id)}
       />
     <!--</div>-->
   {/each}

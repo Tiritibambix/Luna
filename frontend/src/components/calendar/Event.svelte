@@ -18,6 +18,7 @@
     isFirstDay: boolean;
     date: Date;
     view: "month" | "week" | "day";
+    slot: number;
   }
 
   let {
@@ -25,7 +26,8 @@
     event,
     isFirstDay,
     date,
-    view
+    view,
+    slot
   }: Props = $props();
 
   const settings = getSettings();
@@ -125,6 +127,8 @@
     flex-shrink: 0;
 
     transition: background-color linear animations.$animationSpeedFast;
+
+    background-color: var(--eventColor);
   }
 
   div:focus {
@@ -154,10 +158,10 @@
     display: none;
   }
 
-  div.foregroundBright {
+  div.foregroundBright:not(.onlyCircle) {
     color: colors.$foregroundBright;
   }
-  div.foregroundDark {
+  div.foregroundDark:not(.onlyCircle) {
     color: colors.$foregroundDark;
   }
 
@@ -176,13 +180,34 @@
   }
   span.icons {
     flex-shrink: 0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
   }
 
   div.onlyCircle {
-    background-color: transparent !important;
-    color: colors.$foregroundSecondary !important;
+    background-color: transparent;
+    color: colors.$foregroundSecondary;
+  }
+
+  div.scheduleView {
+    position: absolute;
+    margin-top: var(--scheduleTop);
+    height: var(--scheduleHeight);
+    align-items: start;
+    padding-top: dimensions.$gapSmall;
+    z-index: var(--slot);
+
+    display: relative;
+
+    --indent: calc(var(--slot) * #{dimensions.$gapLarge});
+    left: var(--indent);
+    width: calc(100% - var(--indent) - var(--gapBetweenDays)) !important;
+
+    display: inline;
+    text-wrap: wrap;
+    word-break: auto-phrase;
+
+    border: 1px solid black;
   }
 </style>
 
@@ -198,7 +223,8 @@
     class:hidden={!visible}
     class:foregroundBright={isBackgroundDark}
     class:foregroundDark={!isBackgroundDark}
-    class:onlyCircle={showOnlyCircle}
+    class:onlyCircle={showOnlyCircle && view == "month"}
+    class:scheduleView={view != "month"}
     onmouseenter={mouseEnter}
     onmouseleave={mouseLeave}
     onmousedown={mouseDown}
@@ -209,12 +235,15 @@
     role="button"
     tabindex={isFirstDisplay ? 0 : -1}
     style="
-      background-color:{mouseCalendarInteraction.hoveredEvent == event.id ? GetEventHoverColor(event) : GetEventColor(event)};
+      --eventColor:{mouseCalendarInteraction.hoveredEvent == event.id ? GetEventHoverColor(event) : GetEventColor(event)};
       width: calc({(showOnlyCircle ? 1 : remainingDaysThisWeek) * 100}% - {((isEventStart ? 1 : 0) + (eventEndsThisWeek ? 1 : 0)) * (showOnlyCircle ? 0 : 1)} * var(--gapBetweenDays));
       z-index: {16 - getDayIndex(date)};
+      --scheduleTop: {(event.date.start.getHours() * 60 + event.date.start.getMinutes()) / (24 * 60) * 200}%;
+      --scheduleHeight: {((event.date.end.getHours() * 60 + event.date.end.getMinutes() * 60 - event.date.start.getHours() * 60 - event.date.start.getMinutes()) / (24 * 60) * 200)}%;
+      --slot: {slot};
     "
   >
-    {#if showOnlyCircle}
+    {#if showOnlyCircle && view == "month"}
       <ColorCircle
         color={GetEventColor(event)}
         size="small"
