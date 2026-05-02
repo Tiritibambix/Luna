@@ -261,6 +261,8 @@
     {#if eventRepeats}
       <RecurrenceInput
         bind:options={eventRecurrenceRruleOptions} 
+        dtstart={event.date.start}
+        allDay={event.date.allDay}
         editable={editMode}
       />
     {/if}
