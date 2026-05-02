@@ -8,6 +8,7 @@
     anchor?: HTMLElement | undefined;
     matchWidth?: boolean;
     triangle?: boolean;
+    dialog?: boolean;
     visible?: boolean;
     children?: Snippet;
     showPopup?: () => Promise<void>;
@@ -20,6 +21,7 @@
     anchor = undefined,
     matchWidth = false,
     triangle = true,
+    dialog = false,
     visible = $bindable(false),
     children,
     showPopup = $bindable(),
@@ -149,6 +151,18 @@
     overflow-x: hidden;
   }
 
+  .popup.dialog {
+    max-width: none;
+    max-height: none;
+    border: 0;
+    border-radius: dimensions.$borderRadius;
+    padding: 0;
+    background-color: colors.$backgroundPrimary;
+    color: colors.$foregroundPrimary;
+    position-area: right;
+    position-try-fallbacks: left, bottom, top;
+  }
+
   .popup:popover-open {
     display: flex;
     flex-direction: column;
@@ -231,6 +245,7 @@
   class:tooltip
   class:matchWidth
   class:triangle
+  class:dialog
   tabindex="-1"
   ontransitionend={transitionEnd}
   role={tooltip ? "tooltip" : "dialog"}

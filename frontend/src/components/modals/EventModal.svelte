@@ -30,7 +30,7 @@
   import RecurrenceRuleModal from "./RecurrenceRuleModal.svelte";
 
   interface Props {
-    showModal?: (initial?: EventModel, date?: Date) => Promise<EventModel>;
+    showModal?: (initial?: EventModel, date?: Date, anchor?: HTMLElement, initiallyEdit?: boolean) => Promise<EventModel>;
   }
 
   let {
@@ -64,7 +64,20 @@
     return source.type;
   });
 
-  showModal = async (initial?: EventModel, date?: Date): Promise<EventModel> => {
+  let anchor: HTMLElement | undefined = $state();
+  $effect(() => {
+    editMode;
+    untrack(() => {
+      if (!editMode || anchor == undefined || !showModal) return;
+      anchor = undefined;
+      showModal(originalEvent, undefined, undefined, true);
+      editMode = true;
+    })
+  });
+
+  showModal = async (initial?: EventModel, date?: Date, anchorElement?: HTMLElement, initiallyEdit?: boolean): Promise<EventModel> => {
+    anchor = anchorElement;
+
     eventRecurrenceRrule = new RRule({ dtstart: date });
     eventRecurrenceRruleOptions = eventRecurrenceRrule.options;
 
@@ -132,7 +145,7 @@
       }
     }
 
-    return showModalInternal(event);
+    return showModalInternal(event, initiallyEdit || false);
   };
 
   let title: string = $derived((event && event.id) ? (editMode ? t("event.title.edit") : t("event.title.view")) : t("event.title.create"));
@@ -241,6 +254,8 @@
   onEdit={onEdit}
   deletable={event?.can_delete}
   editable={event?.can_edit}
+  popup={anchor != undefined}
+  anchor={anchor}
   submittable={event.calendar !== "" && event.name !== "" && (event.date.start.getTime() < event.date.end.getTime() || (event.date.start.getTime() <= event.date.end.getTime() && event.date.allDay))}
 >
   {#if event != EmptyEvent}
@@ -265,21 +280,23 @@
       <ToggleInput bind:value={eventRepeats} name="repeats" description={t("recurrence.repeats")}/>
     {/if}
     {#if eventRepeats}
-      <RecurrenceInput
-        bind:options={eventRecurrenceRruleOptions} 
-        dtstart={event.date.start}
-        allDay={event.date.allDay}
-        editable={editMode}
-        simple={true}
-      />
-      <Horizontal position="right">
-        <Link onClick={async () => await showRecurrenceRuleModal(eventRecurrenceRruleOptions)}>Advanced recurrence editing</Link>
-      </Horizontal>
-      <RecurrenceRuleModal
-        dtstart={event.date.start}
-        allDay={event.date.allDay}
-        bind:showModal={showRecurrenceRuleModal}
-      />
+      {#if editMode}
+        <RecurrenceInput
+          bind:options={eventRecurrenceRruleOptions} 
+          dtstart={event.date.start}
+          allDay={event.date.allDay}
+          editable={editMode}
+          simple={true}
+        />
+        <Horizontal position="right">
+          <Link onClick={async () => await showRecurrenceRuleModal(eventRecurrenceRruleOptions)}>Advanced recurrence editing</Link>
+        </Horizontal>
+        <RecurrenceRuleModal
+          dtstart={event.date.start}
+          allDay={event.date.allDay}
+          bind:showModal={showRecurrenceRuleModal}
+        />
+      {/if}
     {/if}
     {#if event.id && settings.userSettings[UserSettingKeys.DebugMode]}
       <TextInput value={event.id} name="id" placeholder={t("event.id")} editable={false} />

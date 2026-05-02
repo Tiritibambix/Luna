@@ -54,9 +54,10 @@
 
   let mouseCalendarInteraction = getContext<{ hoveredEvent: string, clickedEvent: string }>("mouseCalendarInteraction");
 
-  let showModal: ((initial?: EventModel, date?: Date) => Promise<EventModel>) = getContext("showEventModal");
+  let showModal: ((initial?: EventModel, date?: Date, anchor?: HTMLElement) => Promise<EventModel>) = getContext("showEventModal");
 
-  let element: HTMLDivElement | null = $state(null);
+  let element: HTMLDivElement | undefined = $state();
+  let anchorName = $derived(event ? `${event.id}-${date.getTime()}` : undefined);
 
   let isEventStart = $derived(event !== null && event.date.start.getTime() >= date.getTime());
   let isFirstDisplay = $derived(isFirstDay || isEventStart);
@@ -86,7 +87,7 @@
 
     if (mouseCalendarInteraction.clickedEvent == event.id) {
       mouseCalendarInteraction.clickedEvent = "";
-      showModal(event).then(newEvent => event = newEvent).catch(NoOp);
+      showModal(event, new Date(), element).then(newEvent => event = newEvent).catch(NoOp);
       element?.blur();
     }
   }
@@ -212,6 +213,7 @@
       background-color:{mouseCalendarInteraction.hoveredEvent == event.id ? GetEventHoverColor(event) : GetEventColor(event)};
       width: calc({(showOnlyCircle ? 1 : remainingDaysThisWeek) * 100}% - {((isEventStart ? 1 : 0) + (eventEndsThisWeek ? 1 : 0)) * (showOnlyCircle ? 0 : 1)} * var(--gapBetweenDays));
       z-index: {16 - getDayIndex(date)};
+      anchor-name: --anchor-{anchorName};
     "
   >
     {#if showOnlyCircle}

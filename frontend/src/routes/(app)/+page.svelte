@@ -179,8 +179,8 @@
   const showCalendarModalInternal = (calendar: CalendarModel) => { return showCalendarModal(calendar); };
   setContext("showCalendarModal", showCalendarModalInternal);
 
-  let showEventModal: (initial?: EventModel, date?: Date) => any = $state(NoOp);
-  const showEventModalInternal = (initial?: EventModel, date?: Date) => { return showEventModal(initial, date); };
+  let showEventModal: (initial?: EventModel, date?: Date, anchor?: HTMLElement) => any = $state(NoOp);
+  const showEventModalInternal = (initial?: EventModel, date?: Date, anchor?: HTMLElement) => { return showEventModal(initial, date, anchor); };
   setContext("showEventModal", showEventModalInternal);
 
   let showDateModal: (date: Date, events: (EventModel | null)[]) => any = $state(NoOp);

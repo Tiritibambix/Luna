@@ -20,6 +20,9 @@
     deletable?: boolean;
     submittable?: boolean;
 
+    popup?: boolean;
+    anchor?: HTMLElement | undefined;
+
     onEdit: () => Promise<T>;
     onDelete: () => Promise<T>;
 
@@ -41,6 +44,8 @@
     editable = true,
     deletable = true,
     submittable = true,
+    popup = false,
+    anchor,
     onEdit,
     onDelete,
     showModal = $bindable(),
@@ -100,6 +105,8 @@
   bind:success
   bind:failure
   topButtons={extraButtonsTop}
+  popup={popup}
+  anchor={anchor}
 >
 {@render children?.()}
 {#snippet buttons()}
