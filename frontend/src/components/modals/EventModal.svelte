@@ -258,9 +258,6 @@
         <DateTimeInput bind:value={event.date.end} name="date_end" placeholder={t("date.end")} editable={editMode} allDay={event.date.allDay} onChange={changeEnd} wrap={true}/>
       {/if}
     </Horizontal>
-    {#if event.id && settings.userSettings[UserSettingKeys.DebugMode]}
-      <TextInput value={event.id} name="id" placeholder={t("event.id")} editable={false} />
-    {/if}
     {#if editMode}
       <ToggleInput bind:value={eventRepeats} name="repeats" description={t("recurrence.repeats")}/>
     {/if}
@@ -271,6 +268,9 @@
         allDay={event.date.allDay}
         editable={editMode}
       />
+    {/if}
+    {#if event.id && settings.userSettings[UserSettingKeys.DebugMode]}
+      <TextInput value={event.id} name="id" placeholder={t("event.id")} editable={false} />
     {/if}
   {/if}
   {#snippet extraButtonsLeft()}
