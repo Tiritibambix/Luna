@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack, type Snippet } from "svelte";
+  import { type Snippet } from "svelte";
   import { NoOp } from "../../lib/client/placeholders";
 
   interface Props {
@@ -59,16 +59,11 @@
       popover.showPopover();
     }, delayed ? 1000 : 0);
 
-    if (!delayed && popover && !visible) {
-      return new Promise<void>((resolve, reject) => {
-        promiseResolve = (() => {
-          resolve();
-        });
-        promiseReject = ((err) => {
-          reject(err);
-        });
-      })
-    }
+    return new Promise<void>((resolve) => {
+      promiseResolve = (() => {
+        resolve();
+      });
+    })
   }
 
   hidePopup = () => {
@@ -87,7 +82,7 @@
     if (event.newState != "closed") return;
     if (!visible) return;
     visible = false;
-    promiseReject();
+    promiseResolve();
   }
 </script>
 

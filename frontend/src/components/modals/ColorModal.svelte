@@ -13,7 +13,7 @@
   import { t } from "@sveltia/i18n";
 
   interface Props {
-    showModal: (initial: string | null) => Promise<string>;
+    showModal: (initial: string | null, anchor?: HTMLElement) => Promise<string>;
   }
 
   let {
@@ -30,7 +30,7 @@
   let pickerActive = false;
   let hueActive = false;
 
-  let showModalInternal: () => Promise<string> = $state(Promise.reject);
+  let showModalInternal: (anchor?: HTMLElement) => Promise<string> = $state(Promise.reject);
   let success: (color: string) =>  void = $state(NoOp);
   let failure: () => void = $state(NoOp);
 
@@ -44,7 +44,7 @@
     hueMove(e);
   }
 
-  showModal = (initial: string | null) => {
+  showModal = (initial: string | null, anchor?: HTMLElement) => {
     pickerActive = false;
     hueActive = false;
     currentColor = (initial || "").toUpperCase();
@@ -56,7 +56,7 @@
       window.addEventListener("mousemove", mouseMove);
     }
 
-    return showModalInternal();
+    return showModalInternal(anchor);
   };
 
   function onModalHide() {

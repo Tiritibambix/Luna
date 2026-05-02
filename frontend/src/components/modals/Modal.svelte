@@ -49,8 +49,10 @@
   showModal = (anchorElement?: HTMLElement) => {
     anchor = anchorElement;
     visible = true
-    if (dialog) dialog.showModal();
-    else showPopup();
+    setTimeout(() => {
+      if (dialog) dialog.showModal();
+      else showPopup().finally(failure);
+    }, 10);
     setTimeout(redrawNotifications, 0); // hacky way to make sure that notifications are always on the very top. sometimes has a visible blink. should revisit one day.
     return new Promise<T>((resolve, reject) => {
       promiseResolve = ((result) => {
@@ -86,7 +88,7 @@
 
   function modalHideInternal() {
     visible = false;
-    promiseReject(); // TODO: promieReqect for hiding popup but not when deanchoring
+    promiseReject();
     onModalHide();
   }
 
