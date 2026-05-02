@@ -19,11 +19,13 @@
   import EventCopyModal from "./EventCopyModal.svelte";
   import IconButton from "../interactive/IconButton.svelte";
   import { Copy } from "lucide-svelte";
-  import { RRule } from "rrule";
+  import { RRule, type Options } from "rrule";
   import { parseTimestampList } from "../../lib/common/ical";
   import { SvelteSet } from "svelte/reactivity";
   import AffectedRecurrencesModal from "./AffectedRecurrencesModal.svelte";
   import { t } from "@sveltia/i18n";
+  import { untrack } from "svelte";
+  import RecurrenceInput from "../forms/RecurrenceInput.svelte";
 
   interface Props {
     showModal?: (initial?: EventModel, date?: Date) => Promise<EventModel>;
@@ -45,6 +47,7 @@
   let originalEvent: EventModel = $state(EmptyEvent);
   let eventRepeats = $state(false);
   let eventRecurrenceRrule = $state(new RRule());
+  let eventRecurrenceRruleOptions = $state<Options>(untrack(() => $state.snapshot(eventRecurrenceRrule).options));
   let eventRecurrenceRdate = $state(new SvelteSet());
   let eventRecurrenceExdate = $state(new SvelteSet());
 
@@ -59,6 +62,9 @@
   });
 
   showModal = async (initial?: EventModel, date?: Date): Promise<EventModel> => {
+    eventRecurrenceRrule = new RRule({ dtstart: date });
+    eventRecurrenceRruleOptions = eventRecurrenceRrule.options;
+
     if (!initial) {
       const start = new Date(date || new Date());
       start.setHours(12, 0, 0, 0);
@@ -110,8 +116,10 @@
 
       eventRepeats = event.date.recurrence != undefined;
       if (event.date.recurrence) {
-        if (event.date.recurrence.RRULE)
+        if (event.date.recurrence.RRULE) {
           eventRecurrenceRrule = RRule.fromString(event.date.recurrence.RRULE);
+          eventRecurrenceRruleOptions = eventRecurrenceRrule.options;
+        }
 
         if (event.date.recurrence.RDATE)
           eventRecurrenceRdate = new SvelteSet(parseTimestampList(event.date.recurrence.RDATE));
@@ -251,18 +259,10 @@
       <ToggleInput bind:value={eventRepeats} name="repeats" description={t("recurrence.repeats")}/>
     {/if}
     {#if eventRepeats}
-      <!--
-      {#if editMode}
-        <SelectInput bind:value={event.date.recurrence} name="recurrence_freq" placeholder="Frequency" showLabel={true} options={[
-          { value: "daily", name: "Daily" },
-          { value: "weekly", name: "Weekly" },
-          { value: "monthly", name: "Monthly" },
-          { value: "yearly", name: "Yearly" },
-        ]} editable={editMode} />
-      {:else}
-        Repeats xyz times or something
-      {/if}
-      -->
+      <RecurrenceInput
+        bind:options={eventRecurrenceRruleOptions} 
+        editable={editMode}
+      />
     {/if}
   {/if}
   {#snippet extraButtonsLeft()}

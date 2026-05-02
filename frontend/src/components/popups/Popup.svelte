@@ -6,6 +6,9 @@
     tooltip?: boolean;
     delayed?: boolean;
     anchor?: HTMLElement | undefined;
+    matchWidth?: boolean;
+    triangle?: boolean;
+    visible?: boolean;
     children?: Snippet;
     showPopup?: () => Promise<void>;
     hidePopup?: () => void;
@@ -15,12 +18,14 @@
     tooltip = true,
     delayed = false,
     anchor = undefined,
+    matchWidth = false,
+    triangle = true,
+    visible = $bindable(false),
     children,
     showPopup = $bindable(),
     hidePopup = $bindable(NoOp),
   }: Props = $props();
 
-  let visible = $state(false);
   let popover: (HTMLElement | undefined) = $state();
   let anchorElement = $derived(anchor || (!popover ? undefined : popover.parentElement))
   let anchorName = $state();
@@ -97,8 +102,9 @@
     z-index: 1;
 
     border: 0;
-    padding: dimensions.$gapSmall;
+    padding: var(--padding, #{dimensions.$gapSmall});
     max-width: 30vw;
+    max-height: 50vh;
     box-shadow: decorations.$boxShadow;
     font-size: text.$fontSize;
     background-color: colors.$backgroundSecondary;
@@ -133,10 +139,20 @@
     }
   }
 
+  .popup:not(.triangle) {
+    --distance: 0;
+  }
+
+  .popup.matchWidth {
+    width: anchor-size(width);
+    max-width: none;
+    overflow-x: hidden;
+  }
+
   .popup:popover-open {
     display: flex;
     flex-direction: column;
-    gap: dimensions.$gapSmall;
+    gap: var(--padding, #{dimensions.$gapSmall});
   }
 
   :global(html[data-frost="true"]) .popup {
@@ -152,7 +168,7 @@
     pointer-events: none;
   }
 
-  .popup::before {
+  .popup.triangle::before {
     content: "";
   
     z-index: -1;
@@ -178,7 +194,7 @@
     transform: translate(-50%, -50%) rotate(45deg);
   }
 
-  .popup::after {
+  .popup.triangle::after {
     content: "";
   
     z-index: -1;
@@ -211,8 +227,10 @@
   popover={(tooltip ? "hint" : "auto") as "auto"}
   style={`--anchor: --anchor-${anchorName}; position-anchor: var(--anchor);`}
   id={`${tooltip ? "tooltip" : "popup"}-${anchorName}`}
-  class:visible={visible}
-  class:tooltip={tooltip}
+  class:visible
+  class:tooltip
+  class:matchWidth
+  class:triangle
   tabindex="-1"
   ontransitionend={transitionEnd}
   role={tooltip ? "tooltip" : "dialog"}

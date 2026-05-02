@@ -700,3 +700,20 @@ perms:
   manage_sessions: "Manage sessions"
   manage_resources: "Manage fonts and themes"
   administrative: "Administrative"
+
+numbers:
+  ordinal:
+    normal: |
+      .input {$num :integer select=ordinal}
+      .match $num
+        one {{{$num}st}}
+        two {{{$num}nd}}
+        few {{{$num}rd}}
+        * {{{$num}th}}
+    reverse: |
+      .input {$num :integer select=ordinal}
+      .match $num
+        one {{{$num}st last}}
+        two {{{$num}nd last}}
+        few {{{$num}rd last}}
+        * {{{$num}th last}}
