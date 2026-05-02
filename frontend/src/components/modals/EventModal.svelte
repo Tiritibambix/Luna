@@ -26,6 +26,8 @@
   import { t } from "@sveltia/i18n";
   import { untrack } from "svelte";
   import RecurrenceInput from "../forms/RecurrenceInput.svelte";
+  import Link from "../forms/Link.svelte";
+  import RecurrenceRuleModal from "./RecurrenceRuleModal.svelte";
 
   interface Props {
     showModal?: (initial?: EventModel, date?: Date) => Promise<EventModel>;
@@ -40,6 +42,7 @@
 
   let showModalInternal: (initial?: EventModel, edit?: boolean) => Promise<EventModel> = $state(Promise.reject);
   let showCopyModal: (event: EventModel) => Promise<EventModel> = $state(Promise.reject);
+  let showRecurrenceRuleModal: (initial: Options) => Promise<Options> = $state(Promise.reject);
   let selectAffectedRecurrences: (edit: boolean) => Promise<"this" | "thisandfuture" | "all"> = $state(Promise.reject);
   let editMode: boolean = $state(false);
 
@@ -267,6 +270,15 @@
         dtstart={event.date.start}
         allDay={event.date.allDay}
         editable={editMode}
+        simple={true}
+      />
+      <Horizontal position="right">
+        <Link onClick={async () => await showRecurrenceRuleModal(eventRecurrenceRruleOptions)}>Advanced recurrence editing</Link>
+      </Horizontal>
+      <RecurrenceRuleModal
+        dtstart={event.date.start}
+        allDay={event.date.allDay}
+        bind:showModal={showRecurrenceRuleModal}
       />
     {/if}
     {#if event.id && settings.userSettings[UserSettingKeys.DebugMode]}

@@ -18,6 +18,7 @@
     dtstart: Date;
     allDay: boolean;
     editable: boolean;
+    simple?: boolean;
   }
 
   let {
@@ -25,6 +26,7 @@
     dtstart,
     allDay,
     editable,
+    simple = false,
   }: Props = $props();
 
   const settings = getSettings();
@@ -394,15 +396,18 @@
 </script>
 
 <!-- FREQ -->
-<SelectInput bind:value={options.freq} name="recurrence_freq" placeholder="Frequency" showLabel={true} options={[
-  { value: RRule.SECONDLY, name: "Secondly" },
-  { value: RRule.MINUTELY, name: "Minutely" },
-  { value: RRule.HOURLY, name: "Hourly" },
-  { value: RRule.DAILY, name: "Daily" },
-  { value: RRule.WEEKLY, name: "Weekly" },
-  { value: RRule.MONTHLY, name: "Monthly" },
-  { value: RRule.YEARLY, name: "Yearly" },
-]} editable={editable} />
+<SelectInput bind:value={options.freq} name="recurrence_freq" placeholder="Frequency" showLabel={true} options={
+  (simple || allDay ? [] : [
+    { value: RRule.SECONDLY, name: "Secondly" },
+    { value: RRule.MINUTELY, name: "Minutely" },
+    { value: RRule.HOURLY, name: "Hourly" },
+  ]).concat([
+    { value: RRule.DAILY, name: "Daily" },
+    { value: RRule.WEEKLY, name: "Weekly" },
+    { value: RRule.MONTHLY, name: "Monthly" },
+    { value: RRule.YEARLY, name: "Yearly" },
+  ]
+)} editable={editable} />
 
 <!--
 {#if options.freq == RRule.YEARLY}
@@ -413,341 +418,343 @@
 {/if}
 -->
 
-<!-- BYMONTH -->
-{#if byValsSemantics.byMonthLimit }
-  <ToggleInput
-    bind:value={byValsEnabled.byMonthLimit}
-    name="recurrence_bymonth_limit_enable" 
-    description="Only during specific months"
-  />
-  {#if byValsEnabled.byMonthLimit}
-    <SelectButtonsMulti
-      bind:values={byVals.byMonthLimit}
-      name="recurrence_bymonth_limit"
-      placeholder="Months"
-      options={ [...Array(12).keys()].map(x => ({ value: x+1, name: getMonthName(x, true) })) }
-      onClick={() => { byVals.byMonthLimit = byVals.byMonthLimit; }}
+{#if !simple}
+  <!-- BYMONTH -->
+  {#if byValsSemantics.byMonthLimit }
+    <ToggleInput
+      bind:value={byValsEnabled.byMonthLimit}
+      name="recurrence_bymonth_limit_enable" 
+      description="Only during specific months"
     />
-  {/if}
-{/if}
-{#if byValsSemantics.byMonthExpand }
-  <ToggleInput
-    bind:value={byValsEnabled.byMonthExpand}
-    name="recurrence_bymonth_expand_enable" 
-    description="Specify month(s) of the year"
-  />
-  {#if byValsEnabled.byMonthExpand}
-    <SelectButtonsMulti
-      bind:values={byVals.byMonthExpand}
-      name="recurrence_bymonth_expand"
-      placeholder="Months"
-      options={ [...Array(12).keys()].map(x => ({ value: x+1, name: getMonthName(x, true) })) }
-      onClick={() => { byVals.byMonthExpand = byVals.byMonthExpand; }}
-    />
-  {/if}
-{/if}
-
-<!-- BYWEEKNO -->
-{#if byValsSemantics.byWeekNoExpand }
-  <ToggleInput
-    bind:value={byValsEnabled.byWeekNoExpand}
-    name="recurrence_byweekno_expand_enable" 
-    description="Specify week(s) of the year"
-  />
-  {#if byValsEnabled.byWeekNoExpand}
-    <SelectInputMulti
-      bind:values={byVals.byWeekNoExpand}
-      name="recurrence_byweekno_expand"
-      placeholder="Week numbers"
-      options={
-        [...Array(53).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
-        [...Array(53).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
-      }
-      click={() => { byVals.byWeekNoExpand = byVals.byWeekNoExpand; }}
-    />
-  {/if}
-{/if}
-
-<!-- BYYEARDAY -->
-{#if byValsSemantics.byYearDayLimit }
-  <ToggleInput
-    bind:value={byValsEnabled.byYearDayLimit}
-    name="recurrence_byyearday_limit_enable" 
-    description="Only on specific days of the year"
-  />
-  {#if byValsEnabled.byYearDayLimit}
-    <SelectInputMulti
-      bind:values={byVals.byMonthDayLimit}
-      name="recurrence_byyearday_limit"
-      placeholder="Days of the year"
-      options={
-        [...Array(366).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
-        [...Array(366).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
-      }
-      click={() => { byVals.byYearDayLimit = byVals.byYearDayLimit; }}
-    />
-  {/if}
-{/if}
-{#if byValsSemantics.byYearDayExpand }
-  <ToggleInput
-    bind:value={byValsEnabled.byYearDayExpand}
-    name="recurrence_byyearday_limit_enable" 
-    description="Specify day(s) of the year"
-  />
-  {#if byValsEnabled.byYearDayExpand}
-    <SelectInputMulti
-      bind:values={byVals.byMonthDayExpand}
-      name="recurrence_byyearday_expand"
-      placeholder="Days of the year"
-      options={
-        [...Array(366).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
-        [...Array(366).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
-      }
-      click={() => { byVals.byYearDayExpand = byVals.byYearDayExpand; }}
-    />
-  {/if}
-{/if}
-
-<!-- BYMONTHDAY -->
-{#if byValsSemantics.byMonthDayLimit }
-  <ToggleInput
-    bind:value={byValsEnabled.byMonthDayLimit}
-    name="recurrence_bymonth_limit_enable" 
-    description="Only on specific days of the month"
-  />
-  {#if byValsEnabled.byMonthDayLimit}
-    <SelectInputMulti
-      bind:values={byVals.byMonthDayLimit}
-      name="recurrence_bymonthday_limit"
-      placeholder="Days of the month"
-      options={
-        [...Array(31).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
-        [...Array(31).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
-      }
-      click={() => { byVals.byMonthDayLimit = byVals.byMonthDayLimit; }}
-    />
-  {/if}
-{/if}
-{#if byValsSemantics.byMonthDayExpand }
-  <ToggleInput
-    bind:value={byValsEnabled.byMonthDayExpand}
-    name="recurrence_bymonth_expand_enable" 
-    description="Specify day(s) of the month"
-  />
-  {#if byValsEnabled.byMonthDayExpand}
-    <SelectInputMulti
-      bind:values={byVals.byMonthDayExpand}
-      name="recurrence_bymonthday_expand"
-      placeholder="Days of the month"
-      options={
-        [...Array(31).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
-        [...Array(31).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
-      }
-      click={() => { byVals.byMonthDayExpand = byVals.byMonthDayExpand; }}
-    />
-  {/if}
-{/if}
-
-<!-- BYDAY -->
-{#if byValsSemantics.byDayLimit }
-  <ToggleInput
-    bind:value={byValsEnabled.byDayLimit}
-    name="recurrence_byday_limit_enable" 
-    description="Only on specific weekdays"
-  />
-  {#if byValsEnabled.byDayLimit}
-    {#if byValsSemantics.byDayNumeric}
-      <SelectInputMulti
-        bind:values={byVals.byDayLimit}
-        name="recurrence_byday_limit"
-        placeholder="Weekdays"
-        options={
-          [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA]
-            .map((x, i) => ({ value: x, name: getDayName(i, false), index: (i + 7 - settings.userSettings[UserSettingKeys.FirstDayOfWeek]) % 7 }))
-            .sort((a, b) =>  a.index-b.index)
-            .flatMap(x =>
-              [{ value: x.value, name: `Every ${x.name}`}].concat(
-                [...Array(4).keys()].map(y => ({ value: x.value.nth(y+1), name: `${t("numbers.ordinal.normal", { values: { num: y + 1 } })} ${x.name}` }))
-              ).concat(
-                [...Array(4).keys()].map(y => ({ value: x.value.nth(-(y+1)), name: `${t("numbers.ordinal.reverse", { values: { num: y + 1 } })} ${x.name}` }))
-              )
-            )
-            .map(x => ({ value: x.value.toString(), name: x.name }))
-        }
-        click={() => { byVals.byDayLimit = byVals.byDayLimit; }}
-      />
-    {:else}
+    {#if byValsEnabled.byMonthLimit}
       <SelectButtonsMulti
-        bind:values={byVals.byDayLimit}
-        name="recurrence_byday_limit"
-        placeholder="Weekdays"
-        options={
-          [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA]
-            .map((x, i) => ({ value: x, name: getDayName(i, true), index: (i + 7 - settings.userSettings[UserSettingKeys.FirstDayOfWeek]) % 7 }))
-            .sort((a, b) =>  a.index-b.index)
-            .map(x => ({ value: x.value.toString(), name: x.name }))
-        }
-        onClick={() => { byVals.byDayLimit = byVals.byDayLimit; }}
+        bind:values={byVals.byMonthLimit}
+        name="recurrence_bymonth_limit"
+        placeholder="Months"
+        options={ [...Array(12).keys()].map(x => ({ value: x+1, name: getMonthName(x, true) })) }
+        onClick={() => { byVals.byMonthLimit = byVals.byMonthLimit; }}
       />
     {/if}
   {/if}
-{/if}
-{#if byValsSemantics.byDayExpand }
-  <ToggleInput
-    bind:value={byValsEnabled.byDayExpand}
-    name="recurrence_byday_expand_enable" 
-    description={byValsSemantics.byDayNumeric ? "Specify weekday(s)" : "Specify day(s) of the week"}
-  />
-  {#if byValsEnabled.byDayExpand}
-    {#if byValsSemantics.byDayNumeric}
-      <SelectInputMulti
-        bind:values={byVals.byDayExpand}
-        name="recurrence_byday_expand"
-        placeholder="Weekdays"
-        options={
-          [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA]
-            .map((x, i) => ({ value: x, name: getDayName(i, false), index: (i + 7 - settings.userSettings[UserSettingKeys.FirstDayOfWeek]) % 7 }))
-            .sort((a, b) =>  a.index-b.index)
-            .flatMap(x =>
-              [{ value: x.value, name: `Every ${x.name}`}].concat(
-                [...Array(4).keys()].map(y => ({ value: x.value.nth(y+1), name: `${t("numbers.ordinal.normal", { values: { num: y + 1 } })} ${x.name}` }))
-              ).concat(
-                [...Array(4).keys()].map(y => ({ value: x.value.nth(-(y+1)), name: `${t("numbers.ordinal.reverse", { values: { num: y + 1 } })} ${x.name}` }))
-              )
-            )
-            .map(x => ({ value: x.value.toString(), name: x.name }))
-        }
-        click={() => { byVals.byDayExpand = byVals.byDayExpand; }}
-      />
-    {:else}
+  {#if byValsSemantics.byMonthExpand }
+    <ToggleInput
+      bind:value={byValsEnabled.byMonthExpand}
+      name="recurrence_bymonth_expand_enable" 
+      description="Specify month(s) of the year"
+    />
+    {#if byValsEnabled.byMonthExpand}
       <SelectButtonsMulti
-        bind:values={byVals.byDayExpand}
-        name="recurrence_byday_expand"
-        placeholder="Weekdays"
-        options={
-          [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA]
-            .map((x, i) => ({ value: x, name: getDayName(i, true), index: (i + 7 - settings.userSettings[UserSettingKeys.FirstDayOfWeek]) % 7 }))
-            .sort((a, b) =>  a.index-b.index)
-            .map(x => ({ value: x.value.toString(), name: x.name }))
-        }
-        onClick={() => { byVals.byDayExpand = byVals.byDayExpand; }}
-      />
-    {/if}
-  {/if}
-{/if}
-
-{#if !allDay}
-  <!-- BYHOUR -->
-  {#if byValsSemantics.byHourLimit }
-    <ToggleInput
-      bind:value={byValsEnabled.byHourLimit}
-      name="recurrence_byhour_limit_enable" 
-      description="Only on specific hours of the day"
-    />
-    {#if byValsEnabled.byHourLimit}
-      <SelectInputMulti
-        bind:values={byVals.byHourLimit}
-        name="recurrence_byhour_limit"
-        placeholder="Hours of the day"
-        options={
-          [...Array(24).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
-        }
-        click={() => { byVals.byHourLimit = byVals.byHourLimit; }}
-      />
-    {/if}
-  {/if}
-  {#if byValsSemantics.byHourExpand }
-    <ToggleInput
-      bind:value={byValsEnabled.byHourExpand}
-      name="recurrence_byhour_expand_enable" 
-      description="Specify hour(s) of the day"
-    />
-    {#if byValsEnabled.byHourExpand}
-      <SelectInputMulti
-        bind:values={byVals.byHourExpand}
-        name="recurrence_byhour_expand"
-        placeholder="Hours of the day"
-        options={
-          [...Array(24).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
-        }
-        click={() => { byVals.byHourExpand = byVals.byHourExpand; }}
+        bind:values={byVals.byMonthExpand}
+        name="recurrence_bymonth_expand"
+        placeholder="Months"
+        options={ [...Array(12).keys()].map(x => ({ value: x+1, name: getMonthName(x, true) })) }
+        onClick={() => { byVals.byMonthExpand = byVals.byMonthExpand; }}
       />
     {/if}
   {/if}
 
-  <!-- BYMINUTE -->
-  {#if byValsSemantics.byMinuteLimit }
+  <!-- BYWEEKNO -->
+  {#if byValsSemantics.byWeekNoExpand }
     <ToggleInput
-      bind:value={byValsEnabled.byMinuteLimit}
-      name="recurrence_byminute_limit_enable" 
-      description="Only on specific minutes of the hour"
+      bind:value={byValsEnabled.byWeekNoExpand}
+      name="recurrence_byweekno_expand_enable" 
+      description="Specify week(s) of the year"
     />
-    {#if byValsEnabled.byMinuteLimit}
+    {#if byValsEnabled.byWeekNoExpand}
       <SelectInputMulti
-        bind:values={byVals.byMinuteLimit}
-        name="recurrence_byminute_limit"
-        placeholder="Minutes of the hour"
+        bind:values={byVals.byWeekNoExpand}
+        name="recurrence_byweekno_expand"
+        placeholder="Week numbers"
         options={
-          [...Array(60).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          [...Array(53).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
+          [...Array(53).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
         }
-        click={() => { byVals.byMinuteLimit = byVals.byMinuteLimit; }}
-      />
-    {/if}
-  {/if}
-  {#if byValsSemantics.byMinuteExpand }
-    <ToggleInput
-      bind:value={byValsEnabled.byMinuteExpand}
-      name="recurrence_byminute_expand_enable" 
-      description="Specify minute(s) of the hour"
-    />
-    {#if byValsEnabled.byMinuteExpand}
-      <SelectInputMulti
-        bind:values={byVals.byMinuteExpand}
-        name="recurrence_byminute_expand"
-        placeholder="Minutes of the hour"
-        options={
-          [...Array(60).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
-        }
-        click={() => { byVals.byMinuteExpand = byVals.byMinuteExpand; }}
+        click={() => { byVals.byWeekNoExpand = byVals.byWeekNoExpand; }}
       />
     {/if}
   {/if}
 
-  <!-- BYSECOND -->
-  {#if byValsSemantics.bySecondLimit }
+  <!-- BYYEARDAY -->
+  {#if byValsSemantics.byYearDayLimit }
     <ToggleInput
-      bind:value={byValsEnabled.bySecondLimit}
-      name="recurrence_bysecond_limit_enable" 
-      description="Only on specific seconds of the minute"
+      bind:value={byValsEnabled.byYearDayLimit}
+      name="recurrence_byyearday_limit_enable" 
+      description="Only on specific days of the year"
     />
-    {#if byValsEnabled.bySecondLimit}
+    {#if byValsEnabled.byYearDayLimit}
       <SelectInputMulti
-        bind:values={byVals.bySecondLimit}
-        name="recurrence_bysecond_limit"
-        placeholder="Seconds of the minute"
+        bind:values={byVals.byMonthDayLimit}
+        name="recurrence_byyearday_limit"
+        placeholder="Days of the year"
         options={
-          [...Array(60).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          [...Array(366).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
+          [...Array(366).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
         }
-        click={() => { byVals.bySecondLimit = byVals.bySecondLimit; }}
+        click={() => { byVals.byYearDayLimit = byVals.byYearDayLimit; }}
       />
     {/if}
   {/if}
-  {#if byValsSemantics.bySecondExpand }
+  {#if byValsSemantics.byYearDayExpand }
     <ToggleInput
-      bind:value={byValsEnabled.bySecondExpand}
-      name="recurrence_bysecond_expand_enable" 
-      description="Specify second(s) of the minute"
+      bind:value={byValsEnabled.byYearDayExpand}
+      name="recurrence_byyearday_limit_enable" 
+      description="Specify day(s) of the year"
     />
-    {#if byValsEnabled.bySecondExpand}
+    {#if byValsEnabled.byYearDayExpand}
       <SelectInputMulti
-        bind:values={byVals.bySecondExpand}
-        name="recurrence_bysecond_expand"
-        placeholder="Seconds of the minute"
+        bind:values={byVals.byMonthDayExpand}
+        name="recurrence_byyearday_expand"
+        placeholder="Days of the year"
         options={
-          [...Array(60).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          [...Array(366).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
+          [...Array(366).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
         }
-        click={() => { byVals.bySecondExpand = byVals.bySecondExpand; }}      
+        click={() => { byVals.byYearDayExpand = byVals.byYearDayExpand; }}
       />
+    {/if}
+  {/if}
+
+  <!-- BYMONTHDAY -->
+  {#if byValsSemantics.byMonthDayLimit }
+    <ToggleInput
+      bind:value={byValsEnabled.byMonthDayLimit}
+      name="recurrence_bymonth_limit_enable" 
+      description="Only on specific days of the month"
+    />
+    {#if byValsEnabled.byMonthDayLimit}
+      <SelectInputMulti
+        bind:values={byVals.byMonthDayLimit}
+        name="recurrence_bymonthday_limit"
+        placeholder="Days of the month"
+        options={
+          [...Array(31).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
+          [...Array(31).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
+        }
+        click={() => { byVals.byMonthDayLimit = byVals.byMonthDayLimit; }}
+      />
+    {/if}
+  {/if}
+  {#if byValsSemantics.byMonthDayExpand }
+    <ToggleInput
+      bind:value={byValsEnabled.byMonthDayExpand}
+      name="recurrence_bymonth_expand_enable" 
+      description="Specify day(s) of the month"
+    />
+    {#if byValsEnabled.byMonthDayExpand}
+      <SelectInputMulti
+        bind:values={byVals.byMonthDayExpand}
+        name="recurrence_bymonthday_expand"
+        placeholder="Days of the month"
+        options={
+          [...Array(31).keys()].map(x => ({ value: x+1, name: t("numbers.ordinal.normal", { values: { num: x + 1 } }) })).concat(
+          [...Array(31).keys()].map(x => ({ value: -(x+1), name: t("numbers.ordinal.reverse", { values: { num: x + 1 } }) })))
+        }
+        click={() => { byVals.byMonthDayExpand = byVals.byMonthDayExpand; }}
+      />
+    {/if}
+  {/if}
+
+  <!-- BYDAY -->
+  {#if byValsSemantics.byDayLimit }
+    <ToggleInput
+      bind:value={byValsEnabled.byDayLimit}
+      name="recurrence_byday_limit_enable" 
+      description="Only on specific weekdays"
+    />
+    {#if byValsEnabled.byDayLimit}
+      {#if byValsSemantics.byDayNumeric}
+        <SelectInputMulti
+          bind:values={byVals.byDayLimit}
+          name="recurrence_byday_limit"
+          placeholder="Weekdays"
+          options={
+            [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA]
+              .map((x, i) => ({ value: x, name: getDayName(i, false), index: (i + 7 - settings.userSettings[UserSettingKeys.FirstDayOfWeek]) % 7 }))
+              .sort((a, b) =>  a.index-b.index)
+              .flatMap(x =>
+                [{ value: x.value, name: `Every ${x.name}`}].concat(
+                  [...Array(4).keys()].map(y => ({ value: x.value.nth(y+1), name: `${t("numbers.ordinal.normal", { values: { num: y + 1 } })} ${x.name}` }))
+                ).concat(
+                  [...Array(4).keys()].map(y => ({ value: x.value.nth(-(y+1)), name: `${t("numbers.ordinal.reverse", { values: { num: y + 1 } })} ${x.name}` }))
+                )
+              )
+              .map(x => ({ value: x.value.toString(), name: x.name }))
+          }
+          click={() => { byVals.byDayLimit = byVals.byDayLimit; }}
+        />
+      {:else}
+        <SelectButtonsMulti
+          bind:values={byVals.byDayLimit}
+          name="recurrence_byday_limit"
+          placeholder="Weekdays"
+          options={
+            [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA]
+              .map((x, i) => ({ value: x, name: getDayName(i, true), index: (i + 7 - settings.userSettings[UserSettingKeys.FirstDayOfWeek]) % 7 }))
+              .sort((a, b) =>  a.index-b.index)
+              .map(x => ({ value: x.value.toString(), name: x.name }))
+          }
+          onClick={() => { byVals.byDayLimit = byVals.byDayLimit; }}
+        />
+      {/if}
+    {/if}
+  {/if}
+  {#if byValsSemantics.byDayExpand }
+    <ToggleInput
+      bind:value={byValsEnabled.byDayExpand}
+      name="recurrence_byday_expand_enable" 
+      description={byValsSemantics.byDayNumeric ? "Specify weekday(s)" : "Specify day(s) of the week"}
+    />
+    {#if byValsEnabled.byDayExpand}
+      {#if byValsSemantics.byDayNumeric}
+        <SelectInputMulti
+          bind:values={byVals.byDayExpand}
+          name="recurrence_byday_expand"
+          placeholder="Weekdays"
+          options={
+            [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA]
+              .map((x, i) => ({ value: x, name: getDayName(i, false), index: (i + 7 - settings.userSettings[UserSettingKeys.FirstDayOfWeek]) % 7 }))
+              .sort((a, b) =>  a.index-b.index)
+              .flatMap(x =>
+                [{ value: x.value, name: `Every ${x.name}`}].concat(
+                  [...Array(4).keys()].map(y => ({ value: x.value.nth(y+1), name: `${t("numbers.ordinal.normal", { values: { num: y + 1 } })} ${x.name}` }))
+                ).concat(
+                  [...Array(4).keys()].map(y => ({ value: x.value.nth(-(y+1)), name: `${t("numbers.ordinal.reverse", { values: { num: y + 1 } })} ${x.name}` }))
+                )
+              )
+              .map(x => ({ value: x.value.toString(), name: x.name }))
+          }
+          click={() => { byVals.byDayExpand = byVals.byDayExpand; }}
+        />
+      {:else}
+        <SelectButtonsMulti
+          bind:values={byVals.byDayExpand}
+          name="recurrence_byday_expand"
+          placeholder="Weekdays"
+          options={
+            [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA]
+              .map((x, i) => ({ value: x, name: getDayName(i, true), index: (i + 7 - settings.userSettings[UserSettingKeys.FirstDayOfWeek]) % 7 }))
+              .sort((a, b) =>  a.index-b.index)
+              .map(x => ({ value: x.value.toString(), name: x.name }))
+          }
+          onClick={() => { byVals.byDayExpand = byVals.byDayExpand; }}
+        />
+      {/if}
+    {/if}
+  {/if}
+
+  {#if !allDay}
+    <!-- BYHOUR -->
+    {#if byValsSemantics.byHourLimit }
+      <ToggleInput
+        bind:value={byValsEnabled.byHourLimit}
+        name="recurrence_byhour_limit_enable" 
+        description="Only on specific hours of the day"
+      />
+      {#if byValsEnabled.byHourLimit}
+        <SelectInputMulti
+          bind:values={byVals.byHourLimit}
+          name="recurrence_byhour_limit"
+          placeholder="Hours of the day"
+          options={
+            [...Array(24).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          }
+          click={() => { byVals.byHourLimit = byVals.byHourLimit; }}
+        />
+      {/if}
+    {/if}
+    {#if byValsSemantics.byHourExpand }
+      <ToggleInput
+        bind:value={byValsEnabled.byHourExpand}
+        name="recurrence_byhour_expand_enable" 
+        description="Specify hour(s) of the day"
+      />
+      {#if byValsEnabled.byHourExpand}
+        <SelectInputMulti
+          bind:values={byVals.byHourExpand}
+          name="recurrence_byhour_expand"
+          placeholder="Hours of the day"
+          options={
+            [...Array(24).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          }
+          click={() => { byVals.byHourExpand = byVals.byHourExpand; }}
+        />
+      {/if}
+    {/if}
+
+    <!-- BYMINUTE -->
+    {#if byValsSemantics.byMinuteLimit }
+      <ToggleInput
+        bind:value={byValsEnabled.byMinuteLimit}
+        name="recurrence_byminute_limit_enable" 
+        description="Only on specific minutes of the hour"
+      />
+      {#if byValsEnabled.byMinuteLimit}
+        <SelectInputMulti
+          bind:values={byVals.byMinuteLimit}
+          name="recurrence_byminute_limit"
+          placeholder="Minutes of the hour"
+          options={
+            [...Array(60).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          }
+          click={() => { byVals.byMinuteLimit = byVals.byMinuteLimit; }}
+        />
+      {/if}
+    {/if}
+    {#if byValsSemantics.byMinuteExpand }
+      <ToggleInput
+        bind:value={byValsEnabled.byMinuteExpand}
+        name="recurrence_byminute_expand_enable" 
+        description="Specify minute(s) of the hour"
+      />
+      {#if byValsEnabled.byMinuteExpand}
+        <SelectInputMulti
+          bind:values={byVals.byMinuteExpand}
+          name="recurrence_byminute_expand"
+          placeholder="Minutes of the hour"
+          options={
+            [...Array(60).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          }
+          click={() => { byVals.byMinuteExpand = byVals.byMinuteExpand; }}
+        />
+      {/if}
+    {/if}
+
+    <!-- BYSECOND -->
+    {#if byValsSemantics.bySecondLimit }
+      <ToggleInput
+        bind:value={byValsEnabled.bySecondLimit}
+        name="recurrence_bysecond_limit_enable" 
+        description="Only on specific seconds of the minute"
+      />
+      {#if byValsEnabled.bySecondLimit}
+        <SelectInputMulti
+          bind:values={byVals.bySecondLimit}
+          name="recurrence_bysecond_limit"
+          placeholder="Seconds of the minute"
+          options={
+            [...Array(60).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          }
+          click={() => { byVals.bySecondLimit = byVals.bySecondLimit; }}
+        />
+      {/if}
+    {/if}
+    {#if byValsSemantics.bySecondExpand }
+      <ToggleInput
+        bind:value={byValsEnabled.bySecondExpand}
+        name="recurrence_bysecond_expand_enable" 
+        description="Specify second(s) of the minute"
+      />
+      {#if byValsEnabled.bySecondExpand}
+        <SelectInputMulti
+          bind:values={byVals.bySecondExpand}
+          name="recurrence_bysecond_expand"
+          placeholder="Seconds of the minute"
+          options={
+            [...Array(60).keys()].map(x => ({ value: x, name: t("numbers.ordinal.normal", { values: { num: x } }) }))
+          }
+          click={() => { byVals.bySecondExpand = byVals.bySecondExpand; }}      
+        />
+      {/if}
     {/if}
   {/if}
 {/if}
@@ -770,13 +777,15 @@
 
 {(new RRule(options)).toText()}
 
-<TextInput
-  placeholder="RRULE"
-  name="recurrence_rrule"
-  value={RRule.optionsToString(options).split("RRULE:")[1]}
-  onChange={(x) => {
-    const parts = x.split("RRULE:");
-    const ruleStr = parts[parts.length - 1];
-    options = RRule.fromString(ruleStr).options;
-  }}
-/>
+{#if !simple}
+  <TextInput
+    placeholder="RRULE"
+    name="recurrence_rrule"
+    value={RRule.optionsToString(options).split("RRULE:")[1]}
+    onChange={(x) => {
+      const parts = x.split("RRULE:");
+      const ruleStr = parts[parts.length - 1];
+      options = RRule.fromString(ruleStr).options;
+    }}
+  />
+{/if}
