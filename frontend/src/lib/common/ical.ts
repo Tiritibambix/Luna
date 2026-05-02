@@ -42,7 +42,8 @@ export function parseTimestampList(str: string): Date[] {
   return timestamps.map(timestamp => dayjs(timestamp, format, timezoneId).toDate());
 }
 
-export function serializeTimestampList(listName: string, allDay: boolean, timezoneId: string, dates: Date[]): string {
+export function serializeTimestampList(listName: string, allDay: boolean, timezoneId: string, dates: Date[]): string | undefined {
+  if (dates.length == 0) return undefined;
   const format = allDay ? "YYYYMMDD" : "YYYYMMDD[T]HHmmss";
   return `${listName};VALUE=${allDay ? "DATE" : "DATE-TIME"};TZID=${timezoneId}:${dates.map(x => dayjs(x).tz(timezoneId).format(format))}`
 }

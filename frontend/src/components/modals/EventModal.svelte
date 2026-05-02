@@ -20,7 +20,7 @@
   import IconButton from "../interactive/IconButton.svelte";
   import { Copy } from "lucide-svelte";
   import { RRule, type Options } from "rrule";
-  import { parseTimestampList } from "../../lib/common/ical";
+  import { parseTimestampList, serializeTimestampList } from "../../lib/common/ical";
   import { SvelteSet } from "svelte/reactivity";
   import AffectedRecurrencesModal from "./AffectedRecurrencesModal.svelte";
   import { t } from "@sveltia/i18n";
@@ -48,8 +48,8 @@
   let eventRepeats = $state(false);
   let eventRecurrenceRrule = $state(new RRule());
   let eventRecurrenceRruleOptions = $state<Options>(untrack(() => $state.snapshot(eventRecurrenceRrule).options));
-  let eventRecurrenceRdate = $state(new SvelteSet());
-  let eventRecurrenceExdate = $state(new SvelteSet());
+  let eventRecurrenceRdate = $state(new SvelteSet<Date>());
+  let eventRecurrenceExdate = $state(new SvelteSet<Date>());
 
   let eventSourceType = $derived.by(() => {
     const calendar = repository.calendars.find(x => x.id === event.calendar);
@@ -150,6 +150,12 @@
   };
   const onEdit = async () => {
     const affect = originalEvent.date.recurrence != undefined ? await selectAffectedRecurrences(true).catch(() => { throw new Error("Cancelled"); }) : "this";
+
+    event.date.recurrence = eventRepeats ? {
+      RRULE: `RRULE:${RRule.optionsToString(eventRecurrenceRruleOptions).split("RRULE:")[1]}`,
+      RDATE: serializeTimestampList("RDATE", event.date.allDay, "UTC", [...eventRecurrenceRdate.values()]),
+      EXDATE: serializeTimestampList("EXDATE", event.date.allDay, "UTC", [...eventRecurrenceExdate.values()]),
+    } : undefined;
 
     if (event.date.allDay) {
       event.date.end.setDate(event.date.end.getDate() + 1);
