@@ -76,7 +76,7 @@
   deanchor = () => {
     if (!visible || anchor == undefined) return;
     anchor = undefined;
-    dialog?.showModal();
+    setTimeout(() => dialog?.showModal(), 10);
   }
 
   function hideModal() {
