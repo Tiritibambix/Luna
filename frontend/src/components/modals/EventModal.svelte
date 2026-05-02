@@ -30,7 +30,7 @@
   import RecurrenceRuleModal from "./RecurrenceRuleModal.svelte";
 
   interface Props {
-    showModal?: (initial?: EventModel, date?: Date, anchor?: HTMLElement, initiallyEdit?: boolean) => Promise<EventModel>;
+    showModal?: (initial?: EventModel, date?: Date, anchor?: HTMLElement) => Promise<EventModel>;
   }
 
   let {
@@ -40,7 +40,7 @@
   const settings = getSettings();
   const repository = getRepository();
 
-  let showModalInternal: (initial?: EventModel, edit?: boolean) => Promise<EventModel> = $state(Promise.reject);
+  let showModalInternal: (initial?: EventModel, edit?: boolean, anchor?: HTMLElement) => Promise<EventModel> = $state(Promise.reject);
   let showCopyModal: (event: EventModel) => Promise<EventModel> = $state(Promise.reject);
   let showRecurrenceRuleModal: (initial: Options) => Promise<Options> = $state(Promise.reject);
   let selectAffectedRecurrences: (edit: boolean) => Promise<"this" | "thisandfuture" | "all"> = $state(Promise.reject);
@@ -64,20 +64,7 @@
     return source.type;
   });
 
-  let anchor: HTMLElement | undefined = $state();
-  $effect(() => {
-    editMode;
-    untrack(() => {
-      if (!editMode || anchor == undefined || !showModal) return;
-      anchor = undefined;
-      showModal(originalEvent, undefined, undefined, true);
-      editMode = true;
-    })
-  });
-
-  showModal = async (initial?: EventModel, date?: Date, anchorElement?: HTMLElement, initiallyEdit?: boolean): Promise<EventModel> => {
-    anchor = anchorElement;
-
+  showModal = async (initial?: EventModel, date?: Date, anchor?: HTMLElement): Promise<EventModel> => {
     eventRecurrenceRrule = new RRule({ dtstart: date });
     eventRecurrenceRruleOptions = eventRecurrenceRrule.options;
 
@@ -145,7 +132,7 @@
       }
     }
 
-    return showModalInternal(event, initiallyEdit || false);
+    return showModalInternal(event, false, anchor);
   };
 
   let title: string = $derived((event && event.id) ? (editMode ? t("event.title.edit") : t("event.title.view")) : t("event.title.create"));
@@ -254,8 +241,6 @@
   onEdit={onEdit}
   deletable={event?.can_delete}
   editable={event?.can_edit}
-  popup={anchor != undefined}
-  anchor={anchor}
   submittable={event.calendar !== "" && event.name !== "" && (event.date.start.getTime() < event.date.end.getTime() || (event.date.start.getTime() <= event.date.end.getTime() && event.date.allDay))}
 >
   {#if event != EmptyEvent}

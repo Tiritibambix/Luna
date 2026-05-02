@@ -18,7 +18,7 @@
 
   interface Props {
     showCreateModal?: () => any;
-    showModal?: (initial?: CalendarModel) => Promise<CalendarModel>;
+    showModal?: (initial?: CalendarModel, anchor?: HTMLElement) => Promise<CalendarModel>;
   }
 
   let {
@@ -29,13 +29,13 @@
   const settings = getSettings();
   const repository = getRepository();
 
-  let showModalInternal: (initial?: CalendarModel, edit?: boolean) => Promise<CalendarModel> = $state(Promise.reject);
+  let showModalInternal: (initial?: CalendarModel, edit?: boolean, anchor?: HTMLElement) => Promise<CalendarModel> = $state(Promise.reject);
 
   let calendar: CalendarModel = $state(EmptyCalendar);
   let originalCalendar: CalendarModel = $state(EmptyCalendar);
   let editMode: boolean = $state(false);
 
-  showModal = async (initial?: CalendarModel): Promise<CalendarModel> => {
+  showModal = async (initial?: CalendarModel, anchor?: HTMLElement): Promise<CalendarModel> => {
     if (!initial) {
       calendar = {
         id: "",
@@ -53,7 +53,7 @@
       originalCalendar = await deepCopy(initial);
     }
 
-    return showModalInternal(calendar);
+    return showModalInternal(calendar, false, anchor);
   };
 
   let title: string = $derived(calendar.id ? (editMode ? t("calendar.title.edit") : t("calendar.title.view")) : t("calendar.title.create"));

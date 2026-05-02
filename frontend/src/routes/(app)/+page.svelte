@@ -171,12 +171,12 @@
   const showNewSourceModalInternal = () => { return showNewSourceModal(); };
   setContext("showNewSourceModal", showNewSourceModalInternal);
 
-  let showSourceModal: (initial?: SourceModel, edit?: boolean) => Promise<SourceModel> = $state(Promise.reject);
-  const showSourceModalInternal = (source: SourceModel) => { return showSourceModal(source); };
+  let showSourceModal: (initial?: SourceModel, anchor?: HTMLElement) => Promise<SourceModel> = $state(Promise.reject);
+  const showSourceModalInternal = (source: SourceModel, anchor?: HTMLElement) => { return showSourceModal(source, anchor); };
   setContext("showSourceModal", showSourceModalInternal);
 
-  let showCalendarModal: (initial?: CalendarModel) => any = $state(NoOp);
-  const showCalendarModalInternal = (calendar: CalendarModel) => { return showCalendarModal(calendar); };
+  let showCalendarModal: (initial?: CalendarModel, anchor?: HTMLElement) => any = $state(NoOp);
+  const showCalendarModalInternal = (calendar: CalendarModel, anchor?: HTMLElement) => { return showCalendarModal(calendar, anchor); };
   setContext("showCalendarModal", showCalendarModalInternal);
 
   let showEventModal: (initial?: EventModel, date?: Date, anchor?: HTMLElement) => any = $state(NoOp);

@@ -13,11 +13,10 @@
     title: string;
     onModalHide?: any;
     onModalSubmit?: any;
-    popup?: boolean;
-    anchor?: HTMLElement | undefined;
-    showModal: () => Promise<T>;
+    showModal: (anchor?: HTMLElement) => Promise<T>;
     success?: (result: T) => void;
     failure?: (reason?: string | Error) => void;
+    deanchor?: () => void;
     children?: Snippet;
     buttons?: Snippet;
     topButtons?: Snippet;
@@ -26,11 +25,10 @@
   let {
     title,
     onModalHide = NoOp,
-    popup = false,
-    anchor,
     showModal = $bindable(),
     success = $bindable(),
     failure = $bindable(),
+    deanchor = $bindable(),
     onModalSubmit = NoOp,
     children,
     buttons,
@@ -42,11 +40,14 @@
   let hidePopup = $state(NoOp);
 
   let visible = $state(false);
+  let anchor: HTMLElement | undefined = $state()
+  let popup = $derived(anchor != undefined);
 
   let promiseResolve: (result: T) => void = $state(NoOp);
   let promiseReject: (reason?: string | Error) => void = $state(NoOp);
 
-  showModal = () => {
+  showModal = (anchorElement?: HTMLElement) => {
+    anchor = anchorElement;
     visible = true
     if (dialog) dialog.showModal();
     else showPopup();
@@ -72,6 +73,11 @@
     promiseReject(error);
     hideModal();
   }
+  deanchor = () => {
+    if (!visible || anchor == undefined) return;
+    anchor = undefined;
+    dialog?.showModal();
+  }
 
   function hideModal() {
     if (dialog) dialog.close();
@@ -80,7 +86,7 @@
 
   function modalHideInternal() {
     visible = false;
-    promiseReject();
+    promiseReject(); // TODO: promieReqect for hiding popup but not when deanchoring
     onModalHide();
   }
 
