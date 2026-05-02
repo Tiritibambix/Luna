@@ -764,6 +764,7 @@
     editable={editable}
     placeholder="Until"
     name="recurrence_until" 
+    allDay={allDay}
   />
 {/if}
 
