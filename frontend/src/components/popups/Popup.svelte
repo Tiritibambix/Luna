@@ -159,8 +159,10 @@
     padding: 0;
     background-color: colors.$backgroundPrimary;
     color: colors.$foregroundPrimary;
+
     position-area: right;
     position-try-fallbacks: left, bottom, top;
+    position-try-order: most-height;
   }
 
   .popup:popover-open {
