@@ -57,7 +57,6 @@
   let showModal: ((initial?: EventModel, date?: Date, anchor?: HTMLElement) => Promise<EventModel>) = getContext("showEventModal");
 
   let element: HTMLDivElement | undefined = $state();
-  let anchorName = $derived(event ? `${event.id}-${date.getTime()}` : undefined);
 
   let isEventStart = $derived(event !== null && event.date.start.getTime() >= date.getTime());
   let isFirstDisplay = $derived(isFirstDay || isEventStart);
@@ -190,6 +189,7 @@
 <!-- TODO: the following reduced the amount of divs we need to render but was prone to some edge-case bugs (no.116) -->
 <!--{#if event && (isFirstDisplay || getDayIndex(date) == 0 || showOnlyCircle)}-->
 {#if event}
+  {@const id = `event-${event.id}-${date.getTime()}`}
   <div
     bind:this={element}
     class:start={isEventStart}
@@ -209,11 +209,12 @@
     onkeypress={keyPress}
     role="button"
     tabindex={isFirstDisplay ? 0 : -1}
+    id={id}
     style="
       background-color:{mouseCalendarInteraction.hoveredEvent == event.id ? GetEventHoverColor(event) : GetEventColor(event)};
       width: calc({(showOnlyCircle ? 1 : remainingDaysThisWeek) * 100}% - {((isEventStart ? 1 : 0) + (eventEndsThisWeek ? 1 : 0)) * (showOnlyCircle ? 0 : 1)} * var(--gapBetweenDays));
       z-index: {16 - getDayIndex(date)};
-      anchor-name: --anchor-{anchorName};
+      anchor-name: --anchor-{id};
     "
   >
     {#if showOnlyCircle}
