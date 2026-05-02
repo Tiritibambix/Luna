@@ -152,8 +152,8 @@
     border: 0;
     border-radius: dimensions.$borderRadius;
     padding: 0;
-    //background-color: colors.$backgroundPrimary;
-    //color: colors.$foregroundPrimary;
+    background-color: colors.$backgroundPrimary;
+    color: colors.$foregroundPrimary;
 
     position-area: right;
     position-try-fallbacks: left, bottom, top;
