@@ -429,12 +429,12 @@
     [RRule.MONTHLY]: [ RecurrencePreset.MonthlyDate, RecurrencePreset.MonthlyDay, RecurrencePreset.MonthlyDayReverse ],
     [RRule.YEARLY]: [ RecurrencePreset.YearlyDate, RecurrencePreset.YearlyMonthDay, RecurrencePreset.YearlyMonthDayReverse ],
   }
-  let nthMonthDay = $derived(Math.floor(dtstart.getDate() / 7))
+  let nthMonthDay = $derived(Math.ceil(dtstart.getDate() / 7))
   let nthReverseMonthDay = $derived.by(() => {
     const lastDayOfMonth = new Date(dtstart);
     lastDayOfMonth.setMonth(lastDayOfMonth.getMonth() + 1);
     lastDayOfMonth.setDate(0);
-    return Math.floor((lastDayOfMonth.getDate() - dtstart.getDate() + 1) / 7);
+    return Math.ceil((lastDayOfMonth.getDate() - dtstart.getDate() + 1) / 7);
   })
   let recurrencePresets: Record<RecurrencePreset, Partial<Options>> = $derived({
     [RecurrencePreset.Daily]: { freq: RRule.DAILY },
