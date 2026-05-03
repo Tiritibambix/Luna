@@ -79,7 +79,7 @@
     height: calc(100% - dimensions.$gapSmall);
     aspect-ratio: 1/1;
     border-radius: 50%;
-    background-color: colors.$foregroundAccent;
+    background-color: colors.$backgroundPrimary;
 
     position: absolute;
 
