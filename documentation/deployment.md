@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
 
   luna-postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: luna-postgres
     volumes:
       - /srv/luna/postgres:/var/lib/postgresql/data
@@ -65,7 +65,7 @@ For baremetal deployment, you must ensure your system has:
 - **make**
 - **bun** (v1.2.5 or higher)
 - **go** (go1.23 or higher)
-- a running **postgres** (version 16 or higher) database
+- a running **postgres** (version 18 or higher) database
 
 For the backend, create an `.env` file in the `backend/src` directory inside the repository and fill it out accordingly to `.env.example`. To start the backend in development mode, run `make` inside the `backend` directory.
 

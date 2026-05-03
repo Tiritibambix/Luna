@@ -35,12 +35,14 @@ services:
       dockerfile: Dockerfile
 
   luna-postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: luna-postgres
     volumes:
-      - /srv/luna/postgres:/var/lib/postgresql/data
+      - /srv/luna/postgres:/var/lib/postgresql
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: luna
       POSTGRES_PASSWORD: luna
