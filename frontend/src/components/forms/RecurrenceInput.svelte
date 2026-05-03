@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { RRule, Weekday, type ByWeekday, type Options } from "rrule";
+  import { Frequency, RRule, Weekday, type ByWeekday, type Options } from "rrule";
   import SelectInput from "./SelectInput.svelte";
   import ToggleInput from "./ToggleInput.svelte";
   import DateTimeInput from "./DateTimeInput.svelte";
@@ -12,6 +12,8 @@
   import { UserSettingKeys } from "../../types/settings";
   import SelectInputMulti from "./SelectInputMulti.svelte";
   import TextInput from "./TextInput.svelte";
+  import RadioInput from "./RadioInput.svelte";
+  import RecurrenceRuleModal from "../modals/RecurrenceRuleModal.svelte";
 
   interface Props {
     options: Options;
@@ -88,6 +90,8 @@
     bySecondExpand: [] as number[],
   })
 
+  const weekdays = [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA];
+
   // Initialize values
   $effect(() => {
     options;
@@ -153,9 +157,8 @@
         byValsEnabled.byDayExpand = false;
         byValsEnabled.byDayLimit = false;
       } else {
-        console.log(options.bynweekday);
         const arr1 = options.byweekday == null ? [] : (Array.isArray(options.byweekday) ? options.byweekday : [ options.byweekday ]);
-        const arr2 = options.bynweekday == null ? [] : options.bynweekday.flatMap(x => [RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA, RRule.SU][x[0]].nth(x[1]));
+        const arr2 = options.bynweekday == null ? [] : options.bynweekday.flatMap(x => weekdays[x[0]].nth(x[1]));
         const arr = arr1.concat(arr2).map(x => x.toString());
         if (byValsSemantics.byDayExpand) {
           byValsEnabled.byDayExpand = true;
@@ -251,7 +254,7 @@
   $effect(() => {
     const wkst = settings.userSettings[UserSettingKeys.FirstDayOfWeek];
     untrack(() => {
-      options.wkst = [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA][wkst];
+      options.wkst = weekdays[wkst];
     })
   })
 
@@ -393,6 +396,92 @@
       else options.bysecond = null;
     })
   })
+
+  // Presets
+  enum RecurrencePreset {
+    Daily,
+    DailyWeekdays,
+    Weekly,
+    MonthlyDate,
+    MonthlyDay,
+    MonthlyDayReverse,
+    YearlyDate,
+    YearlyMonthDay,
+    YearlyMonthDayReverse,
+  }
+  let recurrencePresetNames: Record<RecurrencePreset, string> = {
+    [RecurrencePreset.Daily]: "Daily",
+    [RecurrencePreset.DailyWeekdays]: "Daily on weekdays",
+    [RecurrencePreset.Weekly]: "Weekly",
+    [RecurrencePreset.MonthlyDate]: "Monthly",
+    [RecurrencePreset.MonthlyDay]: "Monthly on this day",
+    [RecurrencePreset.MonthlyDayReverse]: "Monthly on this day reverse",
+    [RecurrencePreset.YearlyDate]: "Yearly",
+    [RecurrencePreset.YearlyMonthDay]: "Yearl month day",
+    [RecurrencePreset.YearlyMonthDayReverse]: "Yearly month day reverse",
+  }
+  let applicableRecurrencePresets: Record<Frequency, RecurrencePreset[]> = {
+    [RRule.SECONDLY]: [],
+    [RRule.MINUTELY]: [],
+    [RRule.HOURLY]: [],
+    [RRule.DAILY]: [ RecurrencePreset.Daily, RecurrencePreset.DailyWeekdays ],
+    [RRule.WEEKLY]: [ RecurrencePreset.Weekly ],
+    [RRule.MONTHLY]: [ RecurrencePreset.MonthlyDate, RecurrencePreset.MonthlyDay, RecurrencePreset.MonthlyDayReverse ],
+    [RRule.YEARLY]: [ RecurrencePreset.YearlyDate, RecurrencePreset.YearlyMonthDay, RecurrencePreset.YearlyMonthDayReverse ],
+  }
+  let nthMonthDay = $derived(Math.floor(dtstart.getDate() / 7))
+  let nthReverseMonthDay = $derived.by(() => {
+    const lastDayOfMonth = new Date(dtstart);
+    lastDayOfMonth.setMonth(lastDayOfMonth.getMonth() + 1);
+    lastDayOfMonth.setDate(0);
+    return Math.floor((lastDayOfMonth.getDate() - dtstart.getDate() + 1) / 7);
+  })
+  let recurrencePresets: Record<RecurrencePreset, Partial<Options>> = $derived({
+    [RecurrencePreset.Daily]: { freq: RRule.DAILY },
+    [RecurrencePreset.DailyWeekdays]: { freq: RRule.DAILY, byweekday: [ RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR ] },
+    [RecurrencePreset.Weekly]: { freq: RRule.WEEKLY },
+    [RecurrencePreset.MonthlyDate]: { freq: RRule.MONTHLY, bymonthday: dtstart.getDate() },
+    [RecurrencePreset.MonthlyDay]: { freq: RRule.MONTHLY, byweekday: weekdays[dtstart.getDay()].nth(nthMonthDay) },
+    [RecurrencePreset.MonthlyDayReverse]: { freq: RRule.MONTHLY, byweekday: weekdays[dtstart.getDay()].nth(-nthReverseMonthDay) },
+    [RecurrencePreset.YearlyDate]: { freq: RRule.YEARLY, bymonth: dtstart.getMonth(), bymonthday: dtstart.getDate() },
+    [RecurrencePreset.YearlyMonthDay]: { freq: RRule.YEARLY, bymonth: dtstart.getMonth(), byweekday: weekdays[dtstart.getDay()].nth(nthMonthDay) },
+    [RecurrencePreset.YearlyMonthDayReverse]: { freq: RRule.YEARLY, bymonth: dtstart.getMonth(), byweekday: weekdays[dtstart.getDay()].nth(-nthReverseMonthDay) },
+  });
+  let chosenRecurrencePreset: RecurrencePreset | null = $state(null);
+
+  function applyPreset(chosen: RecurrencePreset) {
+    options.bymonth = null;
+    options.byweekno = null;
+    options.byyearday = null;
+    options.bymonthday = null;
+    options.bynmonthday = null;
+    options.byweekday = null;
+    options.bynweekday = null;
+    options.byhour = null;
+    options.byminute = null;
+    options.bysecond = null;
+    options.bysetpos = null;
+
+    for (const [key, value] of Object.entries(recurrencePresets[chosen])) {
+      //@ts-ignore
+      options[key] = value;
+    }
+  }
+
+  // Map recurrence to preset
+  // TODO
+  //$effect(() => {
+  //  console.log(options);
+  //  console.log(recurrencePresets[RecurrencePreset.YearlyDate]);
+  //  chosenRecurrencePreset =(
+  //      Object
+  //        .values(recurrencePresets)
+  //        .filter(x => Object.entries(x).every(kv => {
+  //          //@ts-ignore
+  //          return options[kv[0]] === kv[1]
+  //        })) as [RecurrencePreset | null, Partial<Options>][]
+  //    ).concat([[null, {}]])[0][0];
+  //});
 </script>
 
 <!-- FREQ -->
@@ -418,7 +507,20 @@
 {/if}
 -->
 
-{#if !simple}
+{#if simple}
+  {@const presets = applicableRecurrencePresets[options.freq]}
+  {#if presets.length > 1}
+    <RadioInput
+      bind:value={chosenRecurrencePreset}
+      name="test"
+      options={presets.map(x => ({
+        name: recurrencePresetNames[x],
+        value: x,
+      }))}
+      onClick={applyPreset}
+    />
+  {/if}
+{:else}
   <!-- BYMONTH -->
   {#if byValsSemantics.byMonthLimit }
     <ToggleInput
