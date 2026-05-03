@@ -32,15 +32,12 @@ services:
     container_name: luna-backend
     volumes:
       - /srv/luna/data:/data
+      - /srv/luna/postgres.sock:/var/run/postgresql
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     environment:
       PUBLIC_URL: https://cal.example.com
-      DB_HOST: luna-postgres
-      DB_PORT: 5432
-      DB_USERNAME: luna
-      DB_PASSWORD: luna
-      DB_DATABASE: luna
+      DB_URL: "host=/var/run/postgresql user=luna dbname=luna"
     depends_on:
       - luna-postgres
     build:
@@ -51,7 +48,8 @@ services:
     image: postgres:18-alpine
     container_name: luna-postgres
     volumes:
-      - /srv/luna/postgres:/var/lib/postgresql/data
+      - /srv/luna/postgres:/var/lib/postgresql
+      - /srv/luna/postgres.sock:/var/run/postgresql
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     environment:
