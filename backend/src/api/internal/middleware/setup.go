@@ -31,7 +31,11 @@ func RequestSetup(timeout time.Duration, database *db.Database, withTransaction 
 
 			if responseFileBody != nil {
 				c.Header("Content-Disposition", "attachment; filename="+responseFileName)
-				c.Header("Content-Type", "application/text/plain")
+				if len(responseRawType) == 0 {
+					c.Header("Content-Type", "application/text/plain")
+				} else {
+					c.Header("Content-Type", responseRawType)
+				}
 				c.Header("Accept-Length", fmt.Sprintf("%d", len(responseFileBody)))
 				var err error
 				if c.Request.Method != http.MethodHead {

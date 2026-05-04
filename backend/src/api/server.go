@@ -163,6 +163,12 @@ func run(api *util.Api) {
 
 	oauthTokensEndpoints.GET("", handlers.GetOauthClientsWithTokens)
 
+	// /api/backup/*
+	backupEndpoints := administratorEndpoints.Group("/backups")
+
+	backupEndpoints.POST("/create", middleware.RequirePermissions(types.PermCreateBackups), handlers.CreateBackup)
+	backupEndpoints.POST("/restore", middleware.RequirePermissions(types.PermRestoreBackups), handlers.NotImplemented)
+
 	// /api/* the rest
 	authenticatedEndpoints.POST("/url", handlers.CheckUrl)
 

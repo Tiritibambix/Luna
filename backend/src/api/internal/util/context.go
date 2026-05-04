@@ -65,8 +65,8 @@ func (u *HandlerUtility) ResponseWithStatus(httpCode int, msg *gin.H) {
 	u.ResponseChan <- &Response{httpCode, msg, nil, nil, ""}
 }
 
-func (u *HandlerUtility) ResponseWithFile(file types.File) {
-	u.ResponseChan <- &Response{http.StatusOK, nil, file, nil, ""}
+func (u *HandlerUtility) ResponseWithFile(file types.File, mimeType string) {
+	u.ResponseChan <- &Response{http.StatusOK, nil, file, nil, mimeType}
 }
 
 func (u *HandlerUtility) Error(err *errors.ErrorTrace) {

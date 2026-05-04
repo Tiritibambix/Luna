@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"luna-backend/config"
+	"luna-backend/db/internal/backup"
 	"luna-backend/db/internal/parsing"
+	"luna-backend/errors"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
@@ -50,4 +52,8 @@ func NewDatabase(connStr string, host string, port uint16, username, password, d
 	}
 
 	return db
+}
+
+func (db *Database) CreateBackup() (string, *errors.ErrorTrace) {
+	return backup.CreateBackup(db.pool.Config().ConnConfig)
 }

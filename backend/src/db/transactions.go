@@ -114,3 +114,9 @@ func (tx *Transaction) Migrations() *types.MigrationQueries {
 	}
 	return tx.migrations
 }
+
+func (tx *Transaction) Backups() interface {
+	CreateBackup() (string, *errors.ErrorTrace)
+} {
+	return tx.db
+}

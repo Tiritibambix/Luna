@@ -18,5 +18,7 @@ export enum PermissionKeys {
 	ManageUserSettings = "manage_user_settings",
 	ManageSessions = "manage_sessions",
 	ManageResources = "manage_resources",
+	CreateBackups = "create_backups",
+	RestoreBackups = "restore_backups",
 	Administrative = "administrative"
 }

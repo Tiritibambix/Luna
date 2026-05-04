@@ -700,4 +700,6 @@ perms:
   manage_user_settings: "Zarządzanie ustawień użytkownika"
   manage_sessions: "Zarządzanie sesji"
   manage_resources: "Zarządzanie czcionek i motywów"
+  create_backups: "Tworzenie kopii zapasowych"
+  restore_backups: "Przywracanie kopii zapasowych"
   administrative: "Administratywne"

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CaseSensitive, Check, Code, Lock, LogOut, Moon, Palette, RefreshCw, Shield, Sun, TriangleAlert, User, Users, X } from "lucide-svelte";
+  import { Archive, CaseSensitive, Check, Code, Lock, LogOut, Moon, Palette, RefreshCw, Shield, Sun, TriangleAlert, User, Users, X } from "lucide-svelte";
   import { AsyncNoOp, NoOp } from "../../lib/client/placeholders";
   import ButtonList from "../forms/ButtonList.svelte";
   import Modal from "./Modal.svelte";
@@ -33,6 +33,7 @@
   import { getOauthClients } from "../../lib/client/data/oauth.svelte";
   import { locales, t } from "@sveltia/i18n";
   import { getDefaultLanguage, loadLanguage } from "$lib/common/i18n";
+  import BackupsSettingsTab from "./settingModalTabs/BackupsSettingsTab.svelte";
 
   interface Props {
     showModal: () => void;
@@ -101,6 +102,7 @@
       { name: t("settings.themes.title"), value: "themes", icon: Palette },
       { name: t("settings.fonts.title"), value: "fonts", icon: CaseSensitive },
       { name: t("settings.oauth.title"), value: "oauth", icon: Lock },
+      { name: t("settings.backups.title"), value: "backups", icon: Archive },
       { name: t("settings.admin.title"), value: "admin", icon: Shield },
     ],
     [
@@ -505,6 +507,11 @@
         <OauthSettingsTab
           settings={settings}
           clients={oauthClients}
+        />
+      {:else if selectedCategory === "backups"}
+        <BackupsSettingsTab
+          settings={settings}
+          showConfirmation={showConfirmation}
         />
       {:else if selectedCategory === "admin"}
         <AdminSettingsTab

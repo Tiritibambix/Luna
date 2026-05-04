@@ -8,9 +8,12 @@ import (
 	"luna-backend/errors"
 	"net/http"
 	"os"
+	"strings"
 
 	"golang.org/x/crypto/hkdf"
 )
+
+const keyExtension = ".key"
 
 func GenerateSymmetricKey(commonConfig *config.CommonConfig, name string) ([]byte, *errors.ErrorTrace) {
 	secret, tr := GenerateRandomBytes(64)
@@ -22,7 +25,7 @@ func GenerateSymmetricKey(commonConfig *config.CommonConfig, name string) ([]byt
 
 	encodedSecret := base64.StdEncoding.EncodeToString(secret)
 
-	path := fmt.Sprintf("%s/%s.key", commonConfig.Env.GetKeysPath(), name)
+	path := fmt.Sprintf("%s/%s%s", commonConfig.Env.GetKeysPath(), name, keyExtension)
 	err := os.WriteFile(path, []byte(encodedSecret), 0660)
 	if err != nil {
 		return nil, errors.New().Status(http.StatusInternalServerError).
@@ -37,7 +40,7 @@ func GenerateSymmetricKey(commonConfig *config.CommonConfig, name string) ([]byt
 }
 
 func GetSymmetricKey(commonConfig *config.CommonConfig, name string) ([]byte, *errors.ErrorTrace) {
-	path := fmt.Sprintf("%s/%s.key", commonConfig.Env.GetKeysPath(), name)
+	path := fmt.Sprintf("%s/%s%s", commonConfig.Env.GetKeysPath(), name, keyExtension)
 
 	_, err := os.Stat(path)
 	if err == nil {
@@ -72,6 +75,31 @@ func GetSymmetricKey(commonConfig *config.CommonConfig, name string) ([]byte, *e
 			Append(errors.LvlDebug, "Could not get symmetric key %v", name).
 			AltStr(errors.LvlWordy, "Could not get symmetric key")
 	}
+}
+
+func ListKeys(commonConfig *config.CommonConfig) ([]string, *errors.ErrorTrace) {
+	path := commonConfig.Env.GetKeysPath()
+	entries, err := os.ReadDir(path)
+
+	if err != nil {
+		return nil, errors.New().Status(http.StatusInternalServerError).
+			AddErr(errors.LvlDebug, err).
+			Append(errors.LvlDebug, "Could not read keys directory at %v", path).
+			AltStr(errors.LvlWordy, "Could not read keys directory").
+			Append(errors.LvlWordy, "Could not list keys")
+	}
+
+	keyNames := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		entryName := entry.Name()
+
+		if !entry.Type().IsRegular() || !strings.HasSuffix(entryName, keyExtension) {
+			continue
+		}
+		keyNames = append(keyNames, entryName[:len(entryName)-len(keyExtension)])
+	}
+
+	return keyNames, nil
 }
 
 func DeriveKey(secret []byte, salt []byte) ([]byte, error) {

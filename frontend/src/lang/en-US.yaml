@@ -579,6 +579,9 @@ settings:
     title: "OAuth 2.0"
     new: "Register an OAuth 2.0 client"
     list: "Registered OAuth 2.0 clients"
+  backups:
+    title: "Backups"
+    create: "Create a backup"
   admin:
     title: "Administrative"
     confirm:
@@ -699,6 +702,8 @@ perms:
   manage_user_settings: "Manage user preferences"
   manage_sessions: "Manage sessions"
   manage_resources: "Manage fonts and themes"
+  create_backups: "Create backups"
+  restore_backups: "Restore backups"
   administrative: "Administrative"
 
 numbers:

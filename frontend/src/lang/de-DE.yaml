@@ -696,4 +696,6 @@ perms:
   manage_user_settings: "Nutzerpräferenzen verwalten"
   manage_sessions: "Nutzersessionen verwalten"
   manage_resources: "Schriftarten und Farbstile verwalten"
+  create_backups: "Backups erstellen"
+  restore_backups: "Backups wiederherstellen"
   administrative: "Administrativ"
