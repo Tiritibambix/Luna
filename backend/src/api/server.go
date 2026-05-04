@@ -164,10 +164,16 @@ func run(api *util.Api) {
 	oauthTokensEndpoints.GET("", handlers.GetOauthClientsWithTokens)
 
 	// /api/backup/*
-	backupEndpoints := administratorEndpoints.Group("/backups")
+	backupEndpoints := rawEndpoints.Group("/backups",
+		middleware.RequestSetup(api.CommonConfig.Env.REQUEST_TIMEOUT_BACKUP, api.Db, true, api.CommonConfig, api.Logger),
+		middleware.DynamicThrottle(api.Throttle),
+		middleware.RequireAuth(),
+		middleware.RequireAdmin(),
+		middleware.CloseTransaction(api.Logger),
+	)
 
 	backupEndpoints.POST("/create", middleware.RequirePermissions(types.PermCreateBackups), handlers.CreateBackup)
-	backupEndpoints.POST("/restore", middleware.RequirePermissions(types.PermRestoreBackups), handlers.NotImplemented)
+	backupEndpoints.POST("/restore", middleware.RequirePermissions(types.PermRestoreBackups), handlers.RestoreBackup)
 
 	// /api/* the rest
 	authenticatedEndpoints.POST("/url", handlers.CheckUrl)

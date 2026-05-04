@@ -108,16 +108,18 @@ func RequestSetup(timeout time.Duration, database *db.Database, withTransaction 
 		warnChan := make(chan *errors.ErrorTrace)
 
 		// Pass important variables to the handler
-		c.Set("handlerUtil", &util.HandlerUtility{
+		handler := &util.HandlerUtility{
 			Config:       config,
 			Logger:       logger,
 			Tx:           tx,
+			DbBackups:    database,
 			Context:      ctx,
 			GinContext:   c,
 			ResponseChan: responseChan,
 			ErrChan:      errChan,
 			WarnChan:     warnChan,
-		})
+		}
+		c.Set("handlerUtil", handler)
 
 		// Pass the execution on to the next middleware or the handler
 		go func() {
@@ -156,7 +158,7 @@ func RequestSetup(timeout time.Duration, database *db.Database, withTransaction 
 			}
 
 			// Commit if the database was used
-			if withTransaction {
+			if withTransaction && handler.Tx != nil {
 				responseErr = tx.Commit(logger)
 				if responseErr != nil {
 					// TODO: i don't think this kills the request properly
@@ -167,7 +169,7 @@ func RequestSetup(timeout time.Duration, database *db.Database, withTransaction 
 		// In case of a reported error
 		case responseErr = <-errChan:
 			// Rollback if the database was used
-			if withTransaction {
+			if withTransaction && handler.Tx != nil {
 				rollbackErr := tx.Rollback(logger)
 				if rollbackErr != nil {
 					logger.Error(rollbackErr.Serialize(errors.LvlDebug))
@@ -204,5 +206,13 @@ func RequestSetup(timeout time.Duration, database *db.Database, withTransaction 
 					Append(errors.LvlBroad, "Request failed")
 			}
 		}
+	}
+}
+
+func CloseTransaction(logger *logrus.Entry) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		u := util.GetUtil(c)
+		u.Tx.Commit(logger)
+		u.Tx = nil
 	}
 }

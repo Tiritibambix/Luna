@@ -8,7 +8,7 @@
 
   interface Props {
     settings: Settings;
-    showConfirmation: (message: string, confirmText?: string, cancelText?: string) => Promise<void>;
+    showConfirmation: (message: string, detail?: string, notice?: boolean) => Promise<void>;
     deleteAccount: () => Promise<void>;
     refetchProfilePicture: () => void;
     snapshotSettings: () => void;

@@ -26,6 +26,7 @@ type Environmental struct {
 
 	REQUEST_TIMEOUT_DEFAULT        time.Duration `env:"REQUEST_TIMEOUT_DEFAULT" envDefault:"15s"`
 	REQUEST_TIMEOUT_AUTHENTICATION time.Duration `env:"REQUEST_TIMEOUT_AUTHENTICATION" envDefault:"15s"`
+	REQUEST_TIMEOUT_BACKUP         time.Duration `env:"REQUEST_TIMEOUT_BACKUP" envDefault:"120s"`
 
 	DEVELOPMENT bool `env:"DEVELOPMENT" envDefault:"false"`
 }

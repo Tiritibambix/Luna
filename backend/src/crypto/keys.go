@@ -39,6 +39,23 @@ func GenerateSymmetricKey(commonConfig *config.CommonConfig, name string) ([]byt
 	return secret, nil
 }
 
+func OverwriteSymmetricKey(commonConfig *config.CommonConfig, name string, key []byte) *errors.ErrorTrace {
+	encodedSecret := base64.StdEncoding.EncodeToString(key)
+
+	path := fmt.Sprintf("%s/%s%s", commonConfig.Env.GetKeysPath(), name, keyExtension)
+	err := os.WriteFile(path, []byte(encodedSecret), 0660)
+	if err != nil {
+		return errors.New().Status(http.StatusInternalServerError).
+			AddErr(errors.LvlDebug, err).
+			Append(errors.LvlDebug, "Could not write key file %v at %v", path, commonConfig.Env.GetKeysPath()).
+			AltStr(errors.LvlWordy, "Could not write key file").
+			Append(errors.LvlDebug, "Could not generate symmetric key %v", name).
+			AltStr(errors.LvlWordy, "Could not generate symmetric key")
+	}
+
+	return nil
+}
+
 func GetSymmetricKey(commonConfig *config.CommonConfig, name string) ([]byte, *errors.ErrorTrace) {
 	path := fmt.Sprintf("%s/%s%s", commonConfig.Env.GetKeysPath(), name, keyExtension)
 

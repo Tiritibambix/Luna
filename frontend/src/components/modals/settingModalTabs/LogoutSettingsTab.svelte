@@ -18,7 +18,7 @@
     sessions: ActiveSessions;
     today: Date;
     editApiToken: (session: Session, editable: boolean) => Promise<Session>;
-    showConfirmation: (message: string, confirmText?: string, cancelText?: string) => Promise<void>;
+    showConfirmation: (message: string, details?: string, notice?: boolean) => Promise<void>;
   }
 
   let {

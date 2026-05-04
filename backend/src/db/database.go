@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"time"
@@ -56,4 +57,8 @@ func NewDatabase(connStr string, host string, port uint16, username, password, d
 
 func (db *Database) CreateBackup() (string, *errors.ErrorTrace) {
 	return backup.CreateBackup(db.pool.Config().ConnConfig)
+}
+
+func (db *Database) RestoreBackup(dump io.Reader) *errors.ErrorTrace {
+	return backup.RestoreBackup(db.pool.Config().ConnConfig, dump)
 }

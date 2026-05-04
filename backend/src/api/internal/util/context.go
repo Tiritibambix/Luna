@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"io"
 	"luna-backend/config"
 	"luna-backend/db"
 	"luna-backend/errors"
@@ -15,9 +16,13 @@ import (
 )
 
 type HandlerUtility struct {
-	Config       *config.CommonConfig
-	Logger       *logrus.Entry
-	Tx           *db.Transaction
+	Config    *config.CommonConfig
+	Logger    *logrus.Entry
+	Tx        *db.Transaction
+	DbBackups interface {
+		CreateBackup() (string, *errors.ErrorTrace)
+		RestoreBackup(dump io.Reader) *errors.ErrorTrace
+	}
 	Context      context.Context
 	GinContext   *gin.Context
 	ResponseChan chan *Response

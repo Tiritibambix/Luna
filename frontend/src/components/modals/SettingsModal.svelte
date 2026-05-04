@@ -384,9 +384,11 @@
   let internalShowConfirmation: () => Promise<void> = $state(Promise.reject);
   let confirmationMessage = $state("");
   let confirmationDetails = $state("");
-  function showConfirmation(message: string, details: string = "") {
+  let confirmationNotice = $state(false);
+  function showConfirmation(message: string, details: string = "", notice: boolean = false) {
     confirmationMessage = message;
     confirmationDetails = details;
+    confirmationNotice = notice;
     return internalShowConfirmation();
   }
 </script>
@@ -562,7 +564,7 @@
   <PasswordPromptModal bind:prompt={passwordPrompt}/>
 {/if}
 
-<ConfirmationModal bind:showModal={internalShowConfirmation}>
+<ConfirmationModal bind:showModal={internalShowConfirmation} isNotice={confirmationNotice}>
   <span class="confirmation">
     {confirmationMessage}
     {#if confirmationDetails != ""}

@@ -70,6 +70,7 @@ notification:
 
 confirmation:
   title: "Confirmation"
+  notice: "Notice"
   irreversible: "This action is irreversible."
   password:
     title: "Authentication"
@@ -582,6 +583,13 @@ settings:
   backups:
     title: "Backups"
     create: "Create a backup"
+    file: "Upload a backup file"
+    restore: "Restore from a backup"
+    restart: "The restore operation was performed successfully.\nIt is recommended to restart the backend and database now."
+    confirm: "Are you sure you want to restore from the backup file?\nEverything will be overwritten."
+    error:
+      file: "Missing or corrupted backup file"
+      restore: "Failed to restore from the backup: {$msg}"
   admin:
     title: "Administrative"
     confirm:
@@ -670,17 +678,17 @@ validation:
     location:
       unknown: "Unsupported iCal file location"
 
-  repository:
-    error:
-      event:
-        fetch: "Could not fetch events from {$name}: {$msg}"
-      calendar:
-        fetch: "Could net fetch calendars from {$name}: {$msg}"
-      reorder:
-        source: "Could not reorder cached source"
-        calendar: "Could not reorder cached calendar"
-    info:
-      hidden: "Event {$name} was added to a hidden calendar."
+repository:
+  error:
+    event:
+      fetch: "Could not fetch events from {$name}: {$msg}"
+    calendar:
+      fetch: "Could net fetch calendars from {$name}: {$msg}"
+    reorder:
+      source: "Could not reorder cached source"
+      calendar: "Could not reorder cached calendar"
+  info:
+    hidden: "Event {$name} was added to a hidden calendar."
 
 perms:
   read_events: "Read events"
