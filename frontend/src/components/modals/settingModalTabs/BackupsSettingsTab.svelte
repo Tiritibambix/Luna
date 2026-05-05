@@ -37,7 +37,7 @@
     creatingBackup = true;
     backupPassword = "";
     const password = await showEncryptionModal().catch(() => null);
-    if (!password) {
+    if (password === null) {
       backupPassword = "";
       return;
     }
@@ -61,7 +61,7 @@
     creatingBackup = false;
     backupPassword = "";
     const password = await showEncryptionModal().catch(() => null);
-    if (!password) {
+    if (password === null) {
       backupPassword = "";
       return;
     }
