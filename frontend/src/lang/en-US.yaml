@@ -590,6 +590,15 @@ settings:
     error:
       file: "Missing or corrupted backup file"
       restore: "Failed to restore from the backup: {$msg}"
+    encryption:
+      title: "Backup encryption"
+      desc:
+        create: "For security purposes, it is recommended to protect the backup using a passphrase."
+        restore: "If the backup has been encrypted during its creation, you need to input the passphrase."
+      enable:
+        create: "Enable backup encryption"
+        restore: "The backup is encrypted"
+      password: "Encryption passphrase"
   admin:
     title: "Administrative"
     confirm:

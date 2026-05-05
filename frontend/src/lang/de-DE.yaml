@@ -587,6 +587,15 @@ settings:
     error:
       file: "Fehlende oder korrumpierte Backup-Datei"
       restore: "Das Backup konnte nicht wiedereingepsielt werden: {$msg}"
+    encryption:
+      title: "Backup-Verschlüsselung"
+      desc:
+        create: "Aus Sicherheitsgründen ist es empfehlenswert das Backup mit einem Kennwort abzusichern."
+        restore: "Falls die Backup-Datei mit einem Kennwort abgesichert wurde, muss diese nun wieder eingegeben werden."
+      enable:
+        create: "Backup-Verschlüsselung aktivieren"
+        restore: "Die Backup-Datei ist verschlüsselt"
+      password: "Verschlüsselungs-Kennwort"
   admin:
     title: "Administrativ"
     confirm:
