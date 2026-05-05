@@ -5,12 +5,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"luna-backend/api/internal/util"
 	"luna-backend/crypto"
 	"luna-backend/errors"
 	"luna-backend/files"
+	"luna-backend/types"
 	"net/http"
 	"regexp"
 	"time"
@@ -20,31 +22,51 @@ import (
 
 var archivedKeyFileRegex = regexp.MustCompile("keys/([^\\s\\./]+)\\.key")
 
+type backupMetadata struct {
+	Version   types.Version `json:"version"`
+	Timestamp time.Time     `json:"timestamp"`
+}
+
 func CreateBackup(c *gin.Context) {
 	u := util.GetUtil(c)
 
 	// Current time
 	curTime := time.Now()
 
-	// Create database backup
-	dbBackup, err := u.DbBackups.CreateBackup()
+	// Create backup metadata
+	meta := backupMetadata{
+		Version:   u.Config.Version,
+		Timestamp: curTime,
+	}
+	marshalledMeta, err := json.Marshal(meta)
 	if err != nil {
-		u.Error(err.Append(errors.LvlPlain, "Could not create a backup"))
+		u.Error(errors.New().Status(http.StatusInternalServerError).
+			AddErr(errors.LvlDebug, err).
+			Append(errors.LvlWordy, "Could not marshal backup metadata").
+			Append(errors.LvlPlain, "Could not create backup archive"),
+		)
+		return
+	}
+
+	// Create database backup
+	dbBackup, tr := u.DbBackups.CreateBackup()
+	if tr != nil {
+		u.Error(tr.Append(errors.LvlPlain, "Could not create a backup"))
 		return
 	}
 
 	// Get all cryptographic keys
-	keyNames, err := crypto.ListKeys(u.Config)
-	if err != nil {
-		u.Error(err.Append(errors.LvlPlain, "Could not create a backup"))
+	keyNames, tr := crypto.ListKeys(u.Config)
+	if tr != nil {
+		u.Error(tr.Append(errors.LvlPlain, "Could not create a backup"))
 		return
 	}
 
 	keys := make([]string, len(keyNames))
 	for i, name := range keyNames {
-		rawKey, err := crypto.GetSymmetricKey(u.Config, name)
-		if err != nil {
-			u.Error(err.Append(errors.LvlPlain, "Could not create a backup"))
+		rawKey, tr := crypto.GetSymmetricKey(u.Config, name)
+		if tr != nil {
+			u.Error(tr.Append(errors.LvlPlain, "Could not create a backup"))
 			return
 		}
 		keys[i] = base64.StdEncoding.EncodeToString(rawKey)
@@ -56,6 +78,7 @@ func CreateBackup(c *gin.Context) {
 		Body []byte
 	}
 	backupFiles := []backupEntry{
+		{"metadata.json", marshalledMeta},
 		{"postgres.dump", []byte(dbBackup)},
 	}
 	for i, name := range keyNames {
@@ -67,11 +90,27 @@ func CreateBackup(c *gin.Context) {
 
 	// Tar all files
 	var buf bytes.Buffer
-	gzipWriter := gzip.NewWriter(&buf)
-	tarWrite := tar.NewWriter(gzipWriter)
+	var encryptWriter io.WriteCloser
+	if password := c.PostForm("backup_password"); len(password) != 0 {
+		encryptWriter, tr = crypto.EncryptStream(&buf, password)
+		if tr != nil {
+			u.Error(tr.Append(errors.LvlPlain, "Could not encrypt the backup"))
+			return
+		}
+		defer encryptWriter.Close()
+	}
+	var gzipWriter *gzip.Writer
+	if encryptWriter == nil {
+		gzipWriter = gzip.NewWriter(&buf)
+	} else {
+		gzipWriter = gzip.NewWriter(encryptWriter)
+	}
+	defer gzipWriter.Close()
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
 
 	for _, file := range backupFiles {
-		hdr := &tar.Header{
+		tarHeader := &tar.Header{
 			Name:       file.Name,
 			Mode:       0600,
 			Size:       int64(len(file.Body)),
@@ -79,27 +118,30 @@ func CreateBackup(c *gin.Context) {
 			AccessTime: curTime,
 			ChangeTime: curTime,
 		}
-		if err := tarWrite.WriteHeader(hdr); err != nil {
+		if err := tarWriter.WriteHeader(tarHeader); err != nil {
 			u.Error(errors.New().Status(http.StatusInternalServerError).
 				AddErr(errors.LvlDebug, err).
 				Append(errors.LvlWordy, "Could not write file header").
 				Append(errors.LvlPlain, "Could not create backup archive"),
 			)
+			return
 		}
-		if _, err := tarWrite.Write(file.Body); err != nil {
+		if _, err := tarWriter.Write(file.Body); err != nil {
 			u.Error(errors.New().Status(http.StatusInternalServerError).
 				AddErr(errors.LvlDebug, err).
 				Append(errors.LvlWordy, "Could not write file contents").
 				Append(errors.LvlPlain, "Could not create backup archive"),
 			)
+			return
 		}
 	}
-	if err := tarWrite.Close(); err != nil {
+	if err := tarWriter.Close(); err != nil {
 		u.Error(errors.New().Status(http.StatusInternalServerError).
 			AddErr(errors.LvlDebug, err).
 			Append(errors.LvlWordy, "Could not close tar writer").
 			Append(errors.LvlPlain, "Could not create backup archive"),
 		)
+		return
 	}
 	if err := gzipWriter.Close(); err != nil {
 		u.Error(errors.New().Status(http.StatusInternalServerError).
@@ -107,10 +149,27 @@ func CreateBackup(c *gin.Context) {
 			Append(errors.LvlWordy, "Could not close gzip writer").
 			Append(errors.LvlPlain, "Could not create backup archive"),
 		)
+		return
+	}
+	if encryptWriter != nil {
+		if err := encryptWriter.Close(); err != nil {
+			u.Error(errors.New().Status(http.StatusInternalServerError).
+				AddErr(errors.LvlDebug, err).
+				Append(errors.LvlWordy, "Could not close encryption writer").
+				Append(errors.LvlPlain, "Could not create backup archive"),
+			)
+			return
+		}
 	}
 
 	// Respond with the backup archive
-	u.ResponseWithFile(files.NewVolatileFile(fmt.Sprintf("luna-backup-%s.tar.gz", curTime.Format("2006-01-02-15-04-05")), buf.Bytes()), "application/gzip")
+	var extension string
+	if encryptWriter == nil {
+		extension = "tar.gz"
+	} else {
+		extension = "tar.gz.encrypted"
+	}
+	u.ResponseWithFile(files.NewVolatileFile(fmt.Sprintf("luna-backup-%s.%s", curTime.Format("2006-01-02-15-04-05"), extension), buf.Bytes()), "application/gzip")
 }
 
 func RestoreBackup(c *gin.Context) {
@@ -154,7 +213,17 @@ func RestoreBackup(c *gin.Context) {
 		return
 	}
 
-	gzipReader, err := gzip.NewReader(bytes.NewReader(buf))
+	var decryptReader io.ReadCloser
+	if password := c.PostForm("backup_password"); len(password) != 0 {
+		decryptReader = crypto.DecryptStream(bytes.NewReader(buf), password)
+		defer decryptReader.Close()
+	}
+	var gzipReader *gzip.Reader
+	if decryptReader == nil {
+		gzipReader, err = gzip.NewReader(bytes.NewReader(buf))
+	} else {
+		gzipReader, err = gzip.NewReader(decryptReader)
+	}
 	if err != nil {
 		u.Error(errors.New().Status(http.StatusInternalServerError).
 			AddErr(errors.LvlDebug, err).
@@ -163,6 +232,7 @@ func RestoreBackup(c *gin.Context) {
 		)
 		return
 	}
+	defer gzipReader.Close()
 	tarReader := tar.NewReader(gzipReader)
 
 	// Read all files
@@ -192,6 +262,38 @@ func RestoreBackup(c *gin.Context) {
 		}
 
 		switch name := tarHeader.Name; {
+		case name == "metadata.json":
+			marshalledMeta, err := io.ReadAll(&body)
+			if err != nil {
+				u.Error(errors.New().Status(http.StatusInternalServerError).
+					AddErr(errors.LvlDebug, err).
+					Append(errors.LvlWordy, "Could not read backup metadata").
+					Append(errors.LvlWordy, "File was malformed").
+					Append(errors.LvlPlain, "Could not decode backup file"),
+				)
+				return
+			}
+			meta := backupMetadata{}
+			err = json.Unmarshal(marshalledMeta, &meta)
+			if err != nil {
+				u.Error(errors.New().Status(http.StatusInternalServerError).
+					AddErr(errors.LvlDebug, err).
+					Append(errors.LvlWordy, "Could not unmarshal backup metadata").
+					Append(errors.LvlWordy, "File was malformed").
+					Append(errors.LvlPlain, "Could not decode backup file"),
+				)
+				return
+			}
+			if meta.Version.IsGreaterThan(&u.Config.Version) {
+				u.Error(errors.New().Status(http.StatusBadRequest).
+					AddErr(errors.LvlDebug, err).
+					Append(errors.LvlWordy, "The backup was created for a higher version of Luna (%s)", meta.Version.String()).
+					AltStr(errors.LvlPlain, "The backup was created for a higher version of Luna").
+					Append(errors.LvlPlain, "Could not restore backup"),
+				)
+				return
+			}
+
 		case name == "postgres.dump":
 			tr := u.DbBackups.RestoreBackup(&body)
 			if tr != nil {
@@ -233,6 +335,23 @@ func RestoreBackup(c *gin.Context) {
 				AltStr(errors.LvlWordy, "The backup archive contains an unknown file").
 				Append(errors.LvlPlain, "The backup could not be restored fully. Was it made for a more recent version of Luna?"),
 			)
+		}
+	}
+
+	if err := gzipReader.Close(); err != nil {
+		u.Warn(errors.New().Status(http.StatusInternalServerError).
+			AddErr(errors.LvlDebug, err).
+			Append(errors.LvlWordy, "Could not close gzip writer"),
+		)
+		return
+	}
+	if decryptReader != nil {
+		if err := decryptReader.Close(); err != nil {
+			u.Warn(errors.New().Status(http.StatusInternalServerError).
+				AddErr(errors.LvlDebug, err).
+				Append(errors.LvlWordy, "Could not close encryption writer"),
+			)
+			return
 		}
 	}
 

@@ -12,3 +12,10 @@ func GetSha256Hash(data ...[]byte) []byte {
 	digest := hash.Sum(nil)
 	return digest
 }
+
+var DefaultArgon2Settings = map[string]int{
+	"time":    1,
+	"memory":  64 * 1024,
+	"threads": 4,
+	"keylen":  32,
+}

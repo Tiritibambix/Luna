@@ -58,6 +58,7 @@
       return;
     }
 
+    enableEncryption = backupFile[0].name.endsWith(".encrypted");
     creatingBackup = false;
     backupPassword = "";
     const password = await showEncryptionModal().catch(() => null);
@@ -89,7 +90,7 @@
   name="backup_file"
   placeholder={t("settings.backups.file")}
   bind:files={backupFile}
-  accept={".tar.gz"}
+  accept=".tar.gz,.tar.gz.encrypted"
 />
 {#if backupFile !== null}
   <Button color={ColorKeys.Success} onClick={restoreBackup}>

@@ -49,7 +49,6 @@ export async function fetchJsonFromEvent(event: LoadEvent, url: string, options:
 
 export async function fetchFile(url: string, options: RequestInit = {}) {
   const resp = await fetchResponse(url, options).catch(err => { throw err; });
-  console.log(resp);
 
   const contentDisposition = resp.headers.get("content-disposition");
   if (contentDisposition === null) throw new Error("No file was attached");
