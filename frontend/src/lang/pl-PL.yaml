@@ -595,7 +595,7 @@ settings:
       title: "Szyfrowanie kopii zapasowej"
       desc:
         create: "Ze względów bezpieczeństwa zaleca się zabezpieczyć kopię zapasową hasłem."
-        restore: "Jeżeli kopia zapasowa została zabezpieczona, należy je wpisać oryginalne hasło."
+        restore: "Jeżeli kopia zapasowa została zabezpieczona, należy wpisać oryginalne hasło."
       enable:
         create: "Zabezpiecz kopię zapasową"
         restore: "Kopia zapasowa jest zabezpieczona"
