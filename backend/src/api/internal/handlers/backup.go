@@ -13,6 +13,7 @@ import (
 	"luna-backend/errors"
 	"luna-backend/files"
 	"luna-backend/types"
+	"mime/multipart"
 	"net/http"
 	"regexp"
 	"time"
@@ -27,7 +28,9 @@ type backupMetadata struct {
 	Timestamp time.Time     `json:"timestamp"`
 }
 
-func CreateBackup(c *gin.Context) {
+func CreateBackup(c *gin.Context, body *struct {
+	Password *string `json:"backup_password" form:"backup_password"`
+}) {
 	u := util.GetUtil(c)
 
 	// Current time
@@ -91,8 +94,8 @@ func CreateBackup(c *gin.Context) {
 	// Tar all files
 	var buf bytes.Buffer
 	var encryptWriter io.WriteCloser
-	if password := c.PostForm("backup_password"); len(password) != 0 {
-		encryptWriter, tr = crypto.EncryptStream(&buf, password)
+	if body.Password != nil && len(*body.Password) != 0 {
+		encryptWriter, tr = crypto.EncryptStream(&buf, *body.Password)
 		if tr != nil {
 			u.Error(tr.Append(errors.LvlPlain, "Could not encrypt the backup"))
 			return
@@ -172,29 +175,13 @@ func CreateBackup(c *gin.Context) {
 	u.ResponseWithFile(files.NewVolatileFile(fmt.Sprintf("luna-backup-%s.%s", curTime.Format("2006-01-02-15-04-05"), extension), buf.Bytes()), "application/gzip")
 }
 
-func RestoreBackup(c *gin.Context) {
+func RestoreBackup(c *gin.Context, body *struct {
+	Password *string               `json:"backup_password" form:"backup_password"`
+	File     *multipart.FileHeader `form:"backup_file" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
-	// Receive file
-	backupFileHeader, fileErr := c.FormFile("backup_file")
-	switch fileErr {
-	case nil:
-		break
-	case http.ErrMissingFile:
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, fileErr).
-			Append(errors.LvlPlain, "Missing backup file"),
-		)
-		return
-	default:
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, fileErr).
-			Append(errors.LvlPlain, "Invalid form data"),
-		)
-		return
-	}
-
-	file, err := backupFileHeader.Open()
+	file, err := body.File.Open()
 	if err != nil {
 		u.Error(errors.New().Status(http.StatusInternalServerError).
 			AddErr(errors.LvlDebug, err).
@@ -203,7 +190,7 @@ func RestoreBackup(c *gin.Context) {
 		return
 	}
 
-	buf := make([]byte, backupFileHeader.Size)
+	buf := make([]byte, body.File.Size)
 	_, err = file.Read(buf)
 	if err != nil {
 		u.Error(errors.New().Status(http.StatusInternalServerError).
@@ -214,8 +201,8 @@ func RestoreBackup(c *gin.Context) {
 	}
 
 	var decryptReader io.ReadCloser
-	if password := c.PostForm("backup_password"); len(password) != 0 {
-		decryptReader = crypto.DecryptStream(bytes.NewReader(buf), password)
+	if body.Password != nil && len(*body.Password) != 0 {
+		decryptReader = crypto.DecryptStream(bytes.NewReader(buf), *body.Password)
 		defer decryptReader.Close()
 	}
 	var gzipReader *gzip.Reader

@@ -172,8 +172,8 @@ func run(api *util.Api) {
 		middleware.CloseTransaction(api.Logger),
 	)
 
-	backupEndpoints.POST("/create", middleware.RequirePermissions(types.PermCreateBackups), handlers.CreateBackup)
-	backupEndpoints.POST("/restore", middleware.RequirePermissions(types.PermRestoreBackups), handlers.RestoreBackup)
+	backupEndpoints.POST("/create", middleware.RequirePermissionAndBody(types.PermCreateBackups, handlers.CreateBackup)...)
+	backupEndpoints.POST("/restore", middleware.RequirePermissionAndBody(types.PermRestoreBackups, handlers.RestoreBackup)...)
 
 	// /api/* the rest
 	authenticatedEndpoints.POST("/url", middleware.WithBody(handlers.CheckUrl)...)

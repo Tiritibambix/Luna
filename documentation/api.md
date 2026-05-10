@@ -424,7 +424,7 @@ Depending on the `auth_type` field, additional information may need to be passed
 - **Purpose**: Begins a new OAuth 2.0 authorization flow with the client whose internal ID is passed and returns the authorization "state" (request ID)
 - **Note**: The way that the client ID is passed might change to the form body later
 
-#### Post Request
+#### Finish Request
 - **Path**: ``/api/oauth/authorization/<ID>``
 - **Method**: ``POST``
 - **Body**: ``authorization_code``
@@ -442,6 +442,20 @@ Depending on the `auth_type` field, additional information may need to be passed
 - **Method**: ``GET``
 - **Body**: Empty
 - **Purpose**: Returns accounts that the user authorized Luna to use. This consists of the external account id, account name, and internal OAuth 2.0 client id and the ID of the OAuth 2.0 tokens associated with that account.
+
+### Backups
+#### Create Backup
+- **Path**: ``/api/backups/create``
+- **Method**: ``PUT``
+- **Body**: optional ``backup_password``
+- **Purpose**: Creates and downloads a backup of the backend and the database. If a password is supplied, the archive is encrypted with it.
+
+#### Restore Backup
+- **Path**: ``/api/backups/restore``
+- **Method**: ``PUT``
+- **Body**: ``backup_file``, optionally ``backup_password``
+- **Purpose**: Restores the backup from the supplied file. If a password is supplied, it is used to decrypt the archive.
+- **Note**: After restoring a backup, the backend server should be restarted.
 
 ## Additional Frontend Endpoints
 Aside from using the backend API, the frontend also provides a limited amount of endpoints for its own purposes.

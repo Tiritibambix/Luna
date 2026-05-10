@@ -172,7 +172,7 @@ func Register(c *gin.Context, body *struct {
 	Username   string `json:"username" form:"username" binding:"alphanumunicode,required"`
 	Password   string `json:"password" form:"password" binding:"required"`
 	Email      string `json:"email" form:"email" binding:"email,required"`
-	InviteCode string `json:"invite_code" form:"invite_code" binding:"required"`
+	InviteCode string `json:"invite_code" form:"invite_code"`
 }) {
 	u := util.GetUtil(c)
 
