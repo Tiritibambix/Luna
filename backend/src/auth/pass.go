@@ -13,12 +13,6 @@ import (
 )
 
 var DefaultAlgorithm = constants.HashArgon2Peppered
-var defaultSettings = map[string]int{
-	"time":    1,
-	"memory":  64 * 1024,
-	"threads": 4,
-	"keylen":  32,
-}
 
 func PasswordStillSecure(stored *types.PasswordEntry) bool {
 	// If the default algorithm changed, we want to rehash
@@ -27,7 +21,7 @@ func PasswordStillSecure(stored *types.PasswordEntry) bool {
 	}
 
 	// If the default settings are stronger, we want to rehash
-	for key, val := range defaultSettings {
+	for key, val := range crypto.DefaultArgon2Settings {
 		if stored.Parameters[key] < val {
 			return false
 		}
@@ -57,7 +51,7 @@ func SecurePassword(password string, commonConfig *config.CommonConfig) (*types.
 	algInfo := &types.PasswordEntry{
 		Salt:       ran,
 		Algorithm:  DefaultAlgorithm,
-		Parameters: defaultSettings,
+		Parameters: crypto.DefaultArgon2Settings,
 	}
 
 	hash, err := hashPassword(password, algInfo, commonConfig)

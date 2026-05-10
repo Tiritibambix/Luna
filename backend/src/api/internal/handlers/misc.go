@@ -29,7 +29,7 @@ func GetHealth(c *gin.Context) {
 
 	err := u.Tx.Queries().CheckHealth()
 	if err == nil {
-		u.Success(&gin.H{"status": "ok"})
+		u.Success(nil)
 	} else {
 		// With the current setup, this is never even reached, because the middleware already aborts the request earlier.
 		// Stil, in the future we might have some other checks in CheckHealth.

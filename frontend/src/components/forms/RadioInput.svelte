@@ -1,11 +1,8 @@
 <script lang="ts" generics="T">
-  import Toggle from "../interactive/Toggle.svelte";
-  import Tooltip from "../interactive/Tooltip.svelte";
 
   import { NoOp } from "$lib/client/placeholders";
   import RadioToggle from "../interactive/RadioToggle.svelte";
   import type { Option } from "../../types/options";
-  import { SvelteMap } from "svelte/reactivity";
 
   interface Props {
     value: T | null;
@@ -22,8 +19,6 @@
     options,
     onClick = NoOp,
   }: Props = $props();
-
-  let clicked: Map<T, () => any> = $state(new SvelteMap());
 </script>
 
 <style lang="scss">
@@ -62,6 +57,7 @@
       value={option.value}
       bind:selected={value}
       enabled={editable}
+      onChange={(x) => { if (x !== null) onClick(x); }}
     />
     <label for={`${name}-${option.value}`}>
       {option.name}

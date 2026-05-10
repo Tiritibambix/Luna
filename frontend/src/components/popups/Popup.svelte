@@ -1,11 +1,15 @@
 <script lang="ts">
-  import { untrack, type Snippet } from "svelte";
+  import { type Snippet } from "svelte";
   import { NoOp } from "../../lib/client/placeholders";
 
   interface Props {
     tooltip?: boolean;
     delayed?: boolean;
     anchor?: HTMLElement | undefined;
+    matchWidth?: boolean;
+    triangle?: boolean;
+    dialog?: boolean;
+    visible?: boolean;
     children?: Snippet;
     showPopup?: () => Promise<void>;
     hidePopup?: () => void;
@@ -15,12 +19,15 @@
     tooltip = true,
     delayed = false,
     anchor = undefined,
+    matchWidth = false,
+    triangle = true,
+    dialog = false,
+    visible = $bindable(false),
     children,
     showPopup = $bindable(),
     hidePopup = $bindable(NoOp),
   }: Props = $props();
 
-  let visible = $state(false);
   let popover: (HTMLElement | undefined) = $state();
   let anchorElement = $derived(anchor || (!popover ? undefined : popover.parentElement))
   let anchorName = $state();
@@ -35,7 +42,7 @@
     if (currentAnchor.startsWith("--anchor-") && !currentAnchor.includes("undefined")) {
       anchorName = currentAnchor.substring(9);
     } else {
-      anchorName = `${Math.floor(Math.random() * 100000000)}-${anchorElement?.classList.values().toArray().join("-")}`;
+      anchorName = anchorElement.id || `${Math.floor(Math.random() * 100000000)}-${anchorElement?.classList.values().toArray().join("-")}`;
       Object.assign(anchorElement.style, {
         "anchor-name": `--anchor-${anchorName}`,
       });
@@ -52,16 +59,11 @@
       popover.showPopover();
     }, delayed ? 1000 : 0);
 
-    if (!delayed && popover && !visible) {
-      return new Promise<void>((resolve, reject) => {
-        promiseResolve = (() => {
-          resolve();
-        });
-        promiseReject = ((err) => {
-          reject(err);
-        });
-      })
-    }
+    return new Promise<void>((resolve) => {
+      promiseResolve = (() => {
+        resolve();
+      });
+    })
   }
 
   hidePopup = () => {
@@ -80,7 +82,7 @@
     if (event.newState != "closed") return;
     if (!visible) return;
     visible = false;
-    promiseReject();
+    promiseResolve();
   }
 </script>
 
@@ -97,8 +99,9 @@
     z-index: 1;
 
     border: 0;
-    padding: dimensions.$gapSmall;
+    padding: var(--padding, #{dimensions.$gapSmall});
     max-width: 30vw;
+    max-height: 50vh;
     box-shadow: decorations.$boxShadow;
     font-size: text.$fontSize;
     background-color: colors.$backgroundSecondary;
@@ -133,10 +136,34 @@
     }
   }
 
+  .popup:not(.triangle) {
+    --distance: 0;
+  }
+
+  .popup.matchWidth {
+    width: anchor-size(width);
+    max-width: none;
+    overflow-x: hidden;
+  }
+
+  .popup.dialog {
+    max-width: none;
+    max-height: none;
+    border: 0;
+    border-radius: dimensions.$borderRadius;
+    padding: 0;
+    background-color: colors.$backgroundPrimary;
+    color: colors.$foregroundPrimary;
+
+    position-area: right;
+    position-try-fallbacks: left, bottom, top;
+    position-try-order: most-height;
+  }
+
   .popup:popover-open {
     display: flex;
     flex-direction: column;
-    gap: dimensions.$gapSmall;
+    gap: var(--padding, #{dimensions.$gapSmall});
   }
 
   :global(html[data-frost="true"]) .popup {
@@ -152,7 +179,7 @@
     pointer-events: none;
   }
 
-  .popup::before {
+  .popup.triangle::before {
     content: "";
   
     z-index: -1;
@@ -178,7 +205,7 @@
     transform: translate(-50%, -50%) rotate(45deg);
   }
 
-  .popup::after {
+  .popup.triangle::after {
     content: "";
   
     z-index: -1;
@@ -211,8 +238,11 @@
   popover={(tooltip ? "hint" : "auto") as "auto"}
   style={`--anchor: --anchor-${anchorName}; position-anchor: var(--anchor);`}
   id={`${tooltip ? "tooltip" : "popup"}-${anchorName}`}
-  class:visible={visible}
-  class:tooltip={tooltip}
+  class:visible
+  class:tooltip
+  class:matchWidth
+  class:triangle
+  class:dialog
   tabindex="-1"
   ontransitionend={transitionEnd}
   role={tooltip ? "tooltip" : "dialog"}

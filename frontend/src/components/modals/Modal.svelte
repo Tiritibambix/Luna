@@ -5,16 +5,18 @@
   import Horizontal from "../layout/Horizontal.svelte";
   import Title from "../layout/Title.svelte";
 
-  import { NoOp } from "$lib/client/placeholders";
+  import { AsyncNoOp, NoOp } from "$lib/client/placeholders";
   import { redrawNotifications } from "$lib/client/notifications";
+  import Popup from "../popups/Popup.svelte";
 
   interface Props {
     title: string;
     onModalHide?: any;
     onModalSubmit?: any;
-    showModal: () => Promise<T>;
+    showModal: (anchor?: HTMLElement) => Promise<T>;
     success?: (result: T) => void;
     failure?: (reason?: string | Error) => void;
+    deanchor?: () => void;
     children?: Snippet;
     buttons?: Snippet;
     topButtons?: Snippet;
@@ -26,22 +28,31 @@
     showModal = $bindable(),
     success = $bindable(),
     failure = $bindable(),
+    deanchor = $bindable(),
     onModalSubmit = NoOp,
     children,
     buttons,
     topButtons,
   }: Props = $props();
 
-  let dialog: HTMLDialogElement;
+  let dialog: HTMLDialogElement | undefined = $state();
+  let showPopup = $state(AsyncNoOp);
+  let hidePopup = $state(NoOp);
 
   let visible = $state(false);
+  let anchor: HTMLElement | undefined = $state()
+  let popup = $derived(anchor != undefined);
 
   let promiseResolve: (result: T) => void = $state(NoOp);
   let promiseReject: (reason?: string | Error) => void = $state(NoOp);
 
-  showModal = () => {
+  showModal = (anchorElement?: HTMLElement) => {
+    anchor = anchorElement;
     visible = true
-    dialog.showModal();
+    setTimeout(() => {
+      if (dialog) dialog.showModal();
+      else showPopup().finally(failure);
+    }, 10);
     setTimeout(redrawNotifications, 0); // hacky way to make sure that notifications are always on the very top. sometimes has a visible blink. should revisit one day.
     return new Promise<T>((resolve, reject) => {
       promiseResolve = ((result) => {
@@ -64,9 +75,15 @@
     promiseReject(error);
     hideModal();
   }
+  deanchor = () => {
+    if (!visible || anchor == undefined) return;
+    anchor = undefined;
+    setTimeout(() => dialog?.showModal(), 10);
+  }
 
   function hideModal() {
-    dialog.close();
+    if (dialog) dialog.close();
+    else hidePopup();
   }
 
   function modalHideInternal() {
@@ -121,30 +138,53 @@
     min-width: 30rem;
     width: fit-content;
   }
+
+  form.popup {
+    padding: dimensions.$gapLarge;
+    min-width: 0;
+  }
 </style>
 
-<dialog
-  bind:this={dialog}
-  closedby="any"
-  onclose={modalHideInternal}
-  class:closed={visible}
-  tabindex="-1"
->
+{#if popup}
+  <Popup
+    tooltip={false}
+    anchor={anchor}
+    dialog={true}
+    bind:visible
+    bind:showPopup
+    bind:hidePopup
+  >
+    {@render content()}
+  </Popup>
+{:else}
+  <dialog
+    bind:this={dialog}
+    closedby="any"
+    onclose={modalHideInternal}
+    tabindex="-1"
+  >
+    {@render content()}
+  </dialog>
+{/if}
+
+{#snippet content()}
   {#if visible}
-    <form onsubmit={submitInternal}>
-      <Horizontal>
-        <Title>
-          {title}
-        </Title>
-        {#if topButtons}
-          <Horizontal position="right">
-            {@render topButtons()}
+    <form onsubmit={submitInternal} class:popup>
+      {#if !popup}
+        <Horizontal>
+          <Title>
+            {title}
+          </Title>
+          {#if topButtons}
+            <Horizontal position="right">
+              {@render topButtons()}
+              <CloseButton onClick={hideModal} />
+            </Horizontal>
+          {:else}
             <CloseButton onClick={hideModal} />
-          </Horizontal>
-        {:else}
-          <CloseButton onClick={hideModal} />
-        {/if}
-      </Horizontal>
+          {/if}
+        </Horizontal>
+      {/if}
       {@render children?.()}
       {#if buttons}
         <Horizontal position="right">
@@ -153,4 +193,4 @@
       {/if}
     </form>
   {/if}
-</dialog>
+{/snippet}

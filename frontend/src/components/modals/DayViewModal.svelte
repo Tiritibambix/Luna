@@ -22,10 +22,14 @@
     return showModalInternal();
   };
 
-  let currentlyClickedEvent = $state<EventModel | null>(null);
-  let currentlyHoveredEvent = $state<EventModel | null>(null);
-  setContext("currentlyClickedEvent", () => currentlyClickedEvent);
-  setContext("currentlyHoveredEvent", () => currentlyHoveredEvent);
+  let hoveredEvent = $state<string>("");
+  let clickedEvent = $state<string>("");
+  setContext("mouseCalendarInteraction", {
+    get hoveredEvent() { return hoveredEvent },
+    set hoveredEvent(val) { hoveredEvent = val },
+    get clickedEvent() { return clickedEvent },
+    set clickedEvent(val) { clickedEvent = val },
+  });
 </script>
 
 <style lang="scss">

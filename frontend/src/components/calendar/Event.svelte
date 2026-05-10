@@ -52,12 +52,11 @@
 
   let eventEndsThisWeek = $derived(remainingDays == remainingDaysThisWeek);
 
-  let currentlyHoveredEvent = $state((getContext("currentlyHoveredEvent") as () => (EventModel | null))());
-  let currentlyClickedEvent = $state((getContext("currentlyClickedEvent") as () => (EventModel | null))());
+  let mouseCalendarInteraction = getContext<{ hoveredEvent: string, clickedEvent: string }>("mouseCalendarInteraction");
 
-  let showModal: ((initial?: EventModel, date?: Date) => Promise<EventModel>) = getContext("showEventModal");
+  let showModal: ((initial?: EventModel, date?: Date, anchor?: HTMLElement) => Promise<EventModel>) = getContext("showEventModal");
 
-  let element: HTMLDivElement | null = $state(null);
+  let element: HTMLDivElement | undefined = $state();
 
   let isEventStart = $derived(event !== null && event.date.start.getTime() >= date.getTime());
   let isFirstDisplay = $derived(isFirstDay || isEventStart);
@@ -67,27 +66,27 @@
   function mouseEnter() {
     if (event == null) return;
 
-    currentlyHoveredEvent = event;
+    mouseCalendarInteraction.hoveredEvent = event.id;
   }
   function mouseLeave() {
     if (event == null) return;
 
-    if (currentlyHoveredEvent == event)
-      currentlyHoveredEvent = null;
-    if (currentlyClickedEvent == event)
-      currentlyClickedEvent = null;
+    if (mouseCalendarInteraction.hoveredEvent == event.id)
+      mouseCalendarInteraction.hoveredEvent = "";
+    if (mouseCalendarInteraction.clickedEvent == event.id)
+      mouseCalendarInteraction.clickedEvent = "";
   }
   function mouseDown() {
     if (event == null) return;
 
-    currentlyClickedEvent = event;
+    mouseCalendarInteraction.clickedEvent = event.id;
   }
   function mouseUp() {
     if (event == null) return;
 
-    if (currentlyClickedEvent == event) {
-      currentlyClickedEvent = null;
-      showModal(event).then(newEvent => event = newEvent).catch(NoOp);
+    if (mouseCalendarInteraction.clickedEvent == event.id) {
+      mouseCalendarInteraction.clickedEvent = "";
+      showModal(event, new Date(), element).then(newEvent => event = newEvent).catch(NoOp);
       element?.blur();
     }
   }
@@ -190,12 +189,13 @@
 <!-- TODO: the following reduced the amount of divs we need to render but was prone to some edge-case bugs (no.116) -->
 <!--{#if event && (isFirstDisplay || getDayIndex(date) == 0 || showOnlyCircle)}-->
 {#if event}
+  {@const id = `event-${event.id}-${date.getTime()}`}
   <div
     bind:this={element}
     class:start={isEventStart}
     class:end={eventEndsThisWeek}
-    class:hover={currentlyHoveredEvent == event}
-    class:active={currentlyClickedEvent == event}
+    class:hover={mouseCalendarInteraction.hoveredEvent == event.id}
+    class:active={mouseCalendarInteraction.clickedEvent == event.id}
     class:hidden={!visible}
     class:foregroundBright={isBackgroundDark}
     class:foregroundDark={!isBackgroundDark}
@@ -209,10 +209,12 @@
     onkeypress={keyPress}
     role="button"
     tabindex={isFirstDisplay ? 0 : -1}
+    id={id}
     style="
-      background-color:{currentlyHoveredEvent == event ? GetEventHoverColor(event) : GetEventColor(event)};
+      background-color:{mouseCalendarInteraction.hoveredEvent == event.id ? GetEventHoverColor(event) : GetEventColor(event)};
       width: calc({(showOnlyCircle ? 1 : remainingDaysThisWeek) * 100}% - {((isEventStart ? 1 : 0) + (eventEndsThisWeek ? 1 : 0)) * (showOnlyCircle ? 0 : 1)} * var(--gapBetweenDays));
       z-index: {16 - getDayIndex(date)};
+      anchor-name: --anchor-{id};
     "
   >
     {#if showOnlyCircle}

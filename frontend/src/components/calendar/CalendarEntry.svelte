@@ -92,7 +92,11 @@
   }
 </style>
 
-<div class="calendarEntry" use:draggable={{ ownClass: "calendarEntry", childClasses: [], callback: reorderCalendar}}>
+<div
+  class="calendarEntry"
+  use:draggable={{ ownClass: "calendarEntry", childClasses: [], callback: reorderCalendar}}
+  id={`calendar-${calendar.id}`}
+>
   <span class="name">
     <ColorCircle
       color={GetCalendarColor(calendar)}

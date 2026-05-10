@@ -26,10 +26,14 @@
 
   let today = new Date();
 
-  let currentlyClickedEvent = $state<EventModel | null>(null);
-  let currentlyHoveredEvent = $state<EventModel | null>(null);
-  setContext("currentlyHoveredEvent", () => currentlyHoveredEvent);
-  setContext("currentlyClickedEvent", () => currentlyClickedEvent);
+  let hoveredEvent = $state<string>("");
+  let clickedEvent = $state<string>("");
+  setContext("mouseCalendarInteraction", {
+    get hoveredEvent() { return hoveredEvent },
+    set hoveredEvent(val) { hoveredEvent = val },
+    get clickedEvent() { return clickedEvent },
+    set clickedEvent(val) { clickedEvent = val },
+  });
 
   /* Animation */
   let viewIteration = $state(0);

@@ -20,8 +20,7 @@
   let checked = $derived(value == selected);
 
   const toggle = (e: MouseEvent | KeyboardEvent) => {
-    if (checked) selected = null;
-    else selected = value;
+    selected = value;
     onChange(selected);
     e.stopPropagation();
   }
@@ -36,7 +35,7 @@
   button {
     all: unset;
 
-    width: calc(2 * text.$lineHeightParagraph);
+    width: text.$lineHeightParagraph;
     height: text.$lineHeightParagraph;
 
     position: relative;
@@ -77,16 +76,14 @@
   }
 
   .handle {
-    height: calc(100% - dimensions.$gapSmaller);
+    height: calc(100% - dimensions.$gapSmall);
     aspect-ratio: 1/1;
     border-radius: 50%;
     background-color: colors.$backgroundPrimary;
 
-    left: dimensions.$gapSmaller;
-
     position: absolute;
 
-    transform: scale(0.75);
+    transform: scale(0);
 
     transition: transform animations.$animationSpeed animations.$cubic;
 
@@ -94,7 +91,7 @@
   }
 
   .handle.check {
-    transform: translateX(100%);
+    transform: none;
   }
 
   button.disabled {

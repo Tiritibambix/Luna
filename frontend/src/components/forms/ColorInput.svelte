@@ -14,10 +14,11 @@
 
   let { color = $bindable(), name, editable }: Props = $props();
 
-  let showModal: () => Promise<string> = $state(Promise.reject);
+  let showModal: (initial: string | null, anchor?: HTMLElement) => Promise<string> = $state(Promise.reject);
+  let anchor: HTMLElement | undefined = $state();
 
   async function pickColor() {
-    await showModal().then((pickedColor) => color = pickedColor).catch(NoOp);
+    await showModal(color, anchor).then((pickedColor) => color = pickedColor).catch(NoOp);
   }
 </script>
 
@@ -38,7 +39,7 @@
   class:editable={editable}
 >
   {#if editable}
-    <IconButton onClick={pickColor} alt={t("color.display")}>
+    <IconButton bind:button={anchor} onClick={pickColor} alt={t("color.display")}>
       {@render circle()}
     </IconButton>
     <ColorModal

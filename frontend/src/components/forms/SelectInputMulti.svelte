@@ -11,7 +11,7 @@
   let active = $state(false);
 
   interface Props {
-    value: T | null | undefined;
+    values: T[];
     placeholder: string;
     name: string;
     editable?: boolean;
@@ -21,7 +21,7 @@
   }
 
   let {
-    value = $bindable(),
+    values = $bindable(),
     placeholder,
     name,
     editable = true,
@@ -30,7 +30,8 @@
     click = NoOp,
   }: Props = $props();
 
-  let selectedOption: Option<T> | null = $derived(options.filter(x => x.value === value)[0] || null);
+  let valuesSet = $derived(new Set(values));
+  let selectedOptions: Option<T>[] = $derived(options.filter(x => valuesSet.has(x.value)));
 
   let selectWrapper: HTMLElement | undefined = $state();
 
@@ -45,7 +46,8 @@
   }
 
   function optionClick(option: Option<T>) {
-    value = option.value;
+    if (valuesSet.has(option.value)) values = values.filter(x => x != option.value);
+    else values.push(option.value);
     hidePopup();
     click(option.value);
   }
@@ -130,7 +132,7 @@
 {/if}
 <div class="wrapper" class:editable={editable}>
   <select
-    bind:value={value}
+    bind:value={values}
     name={name}
     placeholder={placeholder}
     disabled={!editable}
@@ -143,8 +145,8 @@
     type="button"
     use:focusIndicator={{ type: "bar" }}
   >
-    {#if selectedOption !== null}
-      {selectedOption.name}
+    {#if selectedOptions.length != 0}
+      {selectedOptions.map(x => x.name).join(", ")}
     {:else}
       <span class="placeholder">
         {"Select " + placeholder}
@@ -165,7 +167,7 @@
         class="option" 
         onclick={() => optionClick(option)}
         type="button"
-        class:selected={option.value == value}
+        class:selected={valuesSet.has(option.value)}
       >
         {option.name}
       </button>

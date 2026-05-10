@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { Github } from "svelte-simples"
   import { Copyleft, PlusIcon, RefreshCw, Settings, WifiOff } from "lucide-svelte";
   import { setContext, untrack } from "svelte";
 
@@ -166,31 +165,34 @@
   });
 
   /* Single instance modal logic */
-  let showSourceWizardModal: () => Promise<SourceModel> = $state(Promise.reject);
+  let showSourceWizardModalInternal: () => Promise<SourceModel> = $state(Promise.reject);
+  const showSourceWizardModal = () => { return showSourceWizardModalInternal(); };
 
-  let showNewSourceModal: () => any = $state(NoOp);
-  const showNewSourceModalInternal = () => { return showNewSourceModal(); };
-  setContext("showNewSourceModal", showNewSourceModalInternal);
+  let showNewSourceModalInternal: () => any = $state(NoOp);
+  const showNewSourceModal = () => { return showNewSourceModalInternal(); };
+  setContext("showNewSourceModal", showNewSourceModal);
 
-  let showSourceModal: (initial?: SourceModel, edit?: boolean) => Promise<SourceModel> = $state(Promise.reject);
-  const showSourceModalInternal = (source: SourceModel) => { return showSourceModal(source); };
-  setContext("showSourceModal", showSourceModalInternal);
+  let showSourceModalInternal: (initial?: SourceModel, anchor?: HTMLElement) => Promise<SourceModel> = $state(Promise.reject);
+  const showSourceModal = (source?: SourceModel, anchor?: HTMLElement) => { return showSourceModalInternal(source, anchor); };
+  setContext("showSourceModal", showSourceModal);
 
-  let showCalendarModal: (initial?: CalendarModel) => any = $state(NoOp);
-  const showCalendarModalInternal = (calendar: CalendarModel) => { return showCalendarModal(calendar); };
-  setContext("showCalendarModal", showCalendarModalInternal);
+  let showCalendarModalInternal: (initial?: CalendarModel, anchor?: HTMLElement) => any = $state(NoOp);
+  const showCalendarModal = (calendar?: CalendarModel, anchor?: HTMLElement) => { return showCalendarModalInternal(calendar, anchor); };
+  setContext("showCalendarModal", showCalendarModal);
 
-  let showEventModal: (initial?: EventModel, date?: Date) => any = $state(NoOp);
-  const showEventModalInternal = (initial?: EventModel, date?: Date) => { return showEventModal(initial, date); };
-  setContext("showEventModal", showEventModalInternal);
+  let showEventModalInternal: (initial?: EventModel, date?: Date, anchor?: HTMLElement) => any = $state(NoOp);
+  const showEventModal = (initial?: EventModel, date?: Date, anchor?: HTMLElement) => { return showEventModalInternal(initial, date, anchor); };
+  setContext("showEventModal", showEventModal);
 
-  let showDateModal: (date: Date, events: (EventModel | null)[]) => any = $state(NoOp);
-  const showDateModalInternal = (date: Date, events: (EventModel | null)[]) => { return showDateModal(date, events); };
-  setContext("showDateModal", showDateModalInternal);
+  let showDateModalInternal: (date: Date, events: (EventModel | null)[]) => any = $state(NoOp);
+  const showDateModal = (date: Date, events: (EventModel | null)[]) => { return showDateModalInternal(date, events); };
+  setContext("showDateModal", showDateModal);
 
-  let showSettingsModal: () => any = $state(NoOp);
+  let showSettingsModalInternal: () => any = $state(NoOp);
+  const showSettingsModal = () => { return showSettingsModalInternal(); }
 
-  let showCreditsModal: () => any = $state(NoOp);
+  let showCreditsModalInternal: () => any = $state(NoOp);
+  const showCreditsModal = () => { return showCreditsModalInternal(); };
 
   let showCreatePopup: () => any = $state(NoOp);
 
@@ -281,13 +283,13 @@
   }
 </style>
 
-<SourceWizardModal bind:showModal={showSourceWizardModal}/>
-<SourceModal bind:showModal={showSourceModal}/>
-<CalendarModal bind:showModal={showCalendarModal}/>
-<EventModal bind:showModal={showEventModal}/>
-<DayViewModal bind:showModal={showDateModal}/>
-<SettingsModal bind:showModal={showSettingsModal}/>
-<CreditsModal bind:showModal={showCreditsModal}/>
+<SourceWizardModal bind:showModal={showSourceWizardModalInternal}/>
+<SourceModal bind:showModal={showSourceModalInternal}/>
+<CalendarModal bind:showModal={showCalendarModalInternal}/>
+<EventModal bind:showModal={showEventModalInternal}/>
+<DayViewModal bind:showModal={showDateModalInternal}/>
+<SettingsModal bind:showModal={showSettingsModalInternal}/>
+<CreditsModal bind:showModal={showCreditsModalInternal}/>
 
 <aside>
   <Title>{t("branding.name")}</Title>

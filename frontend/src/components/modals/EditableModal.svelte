@@ -23,7 +23,7 @@
     onEdit: () => Promise<T>;
     onDelete: () => Promise<T>;
 
-    showModal?: (initial?: T, edit?: boolean) => Promise<T>;
+    showModal?: (initial?: T, edit?: boolean, anchor?: HTMLElement) => Promise<T>;
     success?: (result: T) => void;
     failure?: (reason?: string | Error) => void;
 
@@ -53,19 +53,21 @@
     extraButtonsRight,
   }: Props = $props();
 
-  let creating = false;
+  let creating = $state(false);
 
-  let showModalInternal: () => Promise<T> = $state(Promise.reject);
+  let showModalInternal: (anchor?: HTMLElement) => Promise<T> = $state(Promise.reject);
+  let deanchor: () => void = $state(NoOp);
 
   let showDeleteModal: () => Promise<void> = $state(AsyncNoOp);
 
-  showModal = (initial?: T, edit?: boolean) => {
+  showModal = (initial?: T, edit?: boolean, anchor?: HTMLElement) => {
     creating = !initial || initial.id === "";
     editMode = edit || creating;
-    return showModalInternal();
+    return showModalInternal(anchor);
   };
 
   function startEditMode() {
+    deanchor();
     editMode = true;
   }
 
@@ -99,6 +101,7 @@
   bind:showModal={showModalInternal}
   bind:success
   bind:failure
+  bind:deanchor
   topButtons={extraButtonsTop}
 >
 {@render children?.()}

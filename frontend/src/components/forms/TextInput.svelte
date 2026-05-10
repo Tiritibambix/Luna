@@ -11,6 +11,7 @@
   import { ColorKeys } from "../../types/colors";
 
   import { t } from "@sveltia/i18n";
+  import { onMount } from "svelte";
 
   let passwordVisible: boolean = $state(false);
 
@@ -83,6 +84,7 @@
   // Immediately tell the user if the input becomes valid,
   // but not if it becomes invalid, as they are not done typing yet.
   async function internalOnInput(event: Event | null) {
+    resizeLongField();
     if (!value) return;
     value = formatting(value, event);
     const res = await validation(value);
@@ -100,15 +102,19 @@
     })(validation);
   });
 
-  // TODO: automatic height 
-  // let textArea: HTMLTextAreaElement;
-  // let textAreaRows: number = 4;
-  // // https://stackoverflow.com/questions/2035910/how-to-get-the-number-of-lines-in-a-textarea
-  // function updateTextAreaHeight() {
-  //   if (!textArea) return;
-  //   textAreaRows = Math.ceil(textArea.scrollHeight / 18.5)
-  // }
+  // Automatic height
+  onMount(() => setTimeout(resizeLongField, 10));
 
+  function resizeLongField() {
+    if (!multiline || !element) return;
+    const heightBefore = element.getBoundingClientRect().height
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`
+    const heightAfter = element.getBoundingClientRect().height
+    if (heightAfter < heightBefore) resizeLongField();
+  }
+
+  // Copy text
   function copy() {
     navigator.clipboard.writeText(value || "").then(() => {
       queueNotification(ColorKeys.Success, t("notification.success.clipboard"));
@@ -158,9 +164,10 @@
   }
 
   textarea {
-    min-height: 0;
     white-space: pre-wrap;
     word-wrap: break-word;
+    overflow-y: hidden;
+    min-height: text.$fontSize;
   }
 
   div.wrapper.mono > input, div.wrapper.mono > textarea {
@@ -214,7 +221,7 @@
       name={name}
       placeholder={placeholder}
       disabled={!editable}
-      rows=6
+      use:focusIndicator
       tabindex={editable ? 0 : -1}
     ></textarea>
   {:else if password && !passwordVisible}

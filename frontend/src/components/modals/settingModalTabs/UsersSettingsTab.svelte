@@ -20,7 +20,7 @@
     settings: Settings;
     invites: RegistrationInvites;
     users: Users;
-    showConfirmation: (message: string, confirmText?: string, cancelText?: string) => Promise<void>;
+    showConfirmation: (message: string, details?: string, notice?: boolean) => Promise<void>;
     deleteAccount: (id: string) => void;
   }
 

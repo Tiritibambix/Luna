@@ -19,14 +19,18 @@
   import EventCopyModal from "./EventCopyModal.svelte";
   import IconButton from "../interactive/IconButton.svelte";
   import { Copy } from "lucide-svelte";
-  import { RRule } from "rrule";
-  import { parseTimestampList } from "../../lib/common/ical";
+  import { RRule, type Options } from "rrule";
+  import { parseTimestampList, serializeTimestampList } from "../../lib/common/ical";
   import { SvelteSet } from "svelte/reactivity";
   import AffectedRecurrencesModal from "./AffectedRecurrencesModal.svelte";
   import { t } from "@sveltia/i18n";
+  import { untrack } from "svelte";
+  import RecurrenceInput from "../forms/RecurrenceInput.svelte";
+  import Link from "../forms/Link.svelte";
+  import RecurrenceRuleModal from "./RecurrenceRuleModal.svelte";
 
   interface Props {
-    showModal?: (initial?: EventModel, date?: Date) => Promise<EventModel>;
+    showModal?: (initial?: EventModel, date?: Date, anchor?: HTMLElement) => Promise<EventModel>;
   }
 
   let {
@@ -36,8 +40,9 @@
   const settings = getSettings();
   const repository = getRepository();
 
-  let showModalInternal: (initial?: EventModel, edit?: boolean) => Promise<EventModel> = $state(Promise.reject);
+  let showModalInternal: (initial?: EventModel, edit?: boolean, anchor?: HTMLElement) => Promise<EventModel> = $state(Promise.reject);
   let showCopyModal: (event: EventModel) => Promise<EventModel> = $state(Promise.reject);
+  let showRecurrenceRuleModal: (initial: Options) => Promise<Options> = $state(Promise.reject);
   let selectAffectedRecurrences: (edit: boolean) => Promise<"this" | "thisandfuture" | "all"> = $state(Promise.reject);
   let editMode: boolean = $state(false);
 
@@ -45,8 +50,9 @@
   let originalEvent: EventModel = $state(EmptyEvent);
   let eventRepeats = $state(false);
   let eventRecurrenceRrule = $state(new RRule());
-  let eventRecurrenceRdate = $state(new SvelteSet());
-  let eventRecurrenceExdate = $state(new SvelteSet());
+  let eventRecurrenceRruleOptions = $state<Options>(untrack(() => $state.snapshot(eventRecurrenceRrule).options));
+  let eventRecurrenceRdate = $state(new SvelteSet<Date>());
+  let eventRecurrenceExdate = $state(new SvelteSet<Date>());
 
   let eventSourceType = $derived.by(() => {
     const calendar = repository.calendars.find(x => x.id === event.calendar);
@@ -58,7 +64,10 @@
     return source.type;
   });
 
-  showModal = async (initial?: EventModel, date?: Date): Promise<EventModel> => {
+  showModal = async (initial?: EventModel, date?: Date, anchor?: HTMLElement): Promise<EventModel> => {
+    eventRecurrenceRrule = new RRule({ dtstart: date });
+    eventRecurrenceRruleOptions = eventRecurrenceRrule.options;
+
     if (!initial) {
       const start = new Date(date || new Date());
       start.setHours(12, 0, 0, 0);
@@ -110,8 +119,10 @@
 
       eventRepeats = event.date.recurrence != undefined;
       if (event.date.recurrence) {
-        if (event.date.recurrence.RRULE)
+        if (event.date.recurrence.RRULE) {
           eventRecurrenceRrule = RRule.fromString(event.date.recurrence.RRULE);
+          eventRecurrenceRruleOptions = eventRecurrenceRrule.options;
+        }
 
         if (event.date.recurrence.RDATE)
           eventRecurrenceRdate = new SvelteSet(parseTimestampList(event.date.recurrence.RDATE));
@@ -121,7 +132,7 @@
       }
     }
 
-    return showModalInternal(event);
+    return showModalInternal(event, false, anchor);
   };
 
   let title: string = $derived((event && event.id) ? (editMode ? t("event.title.edit") : t("event.title.view")) : t("event.title.create"));
@@ -142,6 +153,12 @@
   };
   const onEdit = async () => {
     const affect = originalEvent.date.recurrence != undefined ? await selectAffectedRecurrences(true).catch(() => { throw new Error("Cancelled"); }) : "this";
+
+    event.date.recurrence = eventRepeats ? {
+      RRULE: `RRULE:${RRule.optionsToString(eventRecurrenceRruleOptions).split("RRULE:")[1]}`,
+      RDATE: serializeTimestampList("RDATE", event.date.allDay, "UTC", [...eventRecurrenceRdate.values()]),
+      EXDATE: serializeTimestampList("EXDATE", event.date.allDay, "UTC", [...eventRecurrenceExdate.values()]),
+    } : undefined;
 
     if (event.date.allDay) {
       event.date.end.setDate(event.date.end.getDate() + 1);
@@ -244,25 +261,30 @@
         <DateTimeInput bind:value={event.date.end} name="date_end" placeholder={t("date.end")} editable={editMode} allDay={event.date.allDay} onChange={changeEnd} wrap={true}/>
       {/if}
     </Horizontal>
-    {#if event.id && settings.userSettings[UserSettingKeys.DebugMode]}
-      <TextInput value={event.id} name="id" placeholder={t("event.id")} editable={false} />
-    {/if}
     {#if editMode}
       <ToggleInput bind:value={eventRepeats} name="repeats" description={t("recurrence.repeats")}/>
     {/if}
     {#if eventRepeats}
-      <!--
       {#if editMode}
-        <SelectInput bind:value={event.date.recurrence} name="recurrence_freq" placeholder="Frequency" showLabel={true} options={[
-          { value: "daily", name: "Daily" },
-          { value: "weekly", name: "Weekly" },
-          { value: "monthly", name: "Monthly" },
-          { value: "yearly", name: "Yearly" },
-        ]} editable={editMode} />
-      {:else}
-        Repeats xyz times or something
+        <RecurrenceInput
+          bind:options={eventRecurrenceRruleOptions} 
+          dtstart={event.date.start}
+          allDay={event.date.allDay}
+          editable={editMode}
+          simple={true}
+        />
+        <Horizontal position="right">
+          <Link onClick={async () => await showRecurrenceRuleModal(eventRecurrenceRruleOptions)}>Advanced recurrence editing</Link>
+        </Horizontal>
+        <RecurrenceRuleModal
+          dtstart={event.date.start}
+          allDay={event.date.allDay}
+          bind:showModal={showRecurrenceRuleModal}
+        />
       {/if}
-      -->
+    {/if}
+    {#if event.id && settings.userSettings[UserSettingKeys.DebugMode]}
+      <TextInput value={event.id} name="id" placeholder={t("event.id")} editable={false} />
     {/if}
   {/if}
   {#snippet extraButtonsLeft()}

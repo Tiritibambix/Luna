@@ -47,7 +47,22 @@ export async function fetchJsonFromEvent(event: LoadEvent, url: string, options:
   return body;
 }
 
-export function downloadFileToClient(file: FileList | string | null) {
+export async function fetchFile(url: string, options: RequestInit = {}) {
+  const resp = await fetchResponse(url, options).catch(err => { throw err; });
+
+  const contentDisposition = resp.headers.get("content-disposition");
+  if (contentDisposition === null) throw new Error("No file was attached");
+  const parts = contentDisposition.split(';').filter(x => x.includes("filename="));
+  if (parts.length === 0) throw new Error("No file was attached");
+  if (parts.length !== 1) throw new Error("More than one file was attached");
+
+  const filename = parts[0].substring(10).trim();
+  const blob = await resp.blob();
+
+  return new File([blob], filename);
+}
+
+export function downloadFileToClient(file: FileList | File | string | null) {
   if (file === null) return;
 
   const a = document.createElement("a");
@@ -56,6 +71,9 @@ export function downloadFileToClient(file: FileList | string | null) {
   if (typeof file === "string") {
     url = file.startsWith('/') ? file : `/api/files/${file}`;
     a.download = file.split("/").pop() || "download";
+  } else if (file instanceof File) {
+    url = URL.createObjectURL(file);
+    a.download = file.name;
   } else {
     const blob = new Blob([file[0]], { type: file[0].type });
     url = URL.createObjectURL(blob);

@@ -3,7 +3,6 @@
   import { downloadFileToClient, fetchResponse } from "../../../lib/client/net";
   import { queueNotification } from "../../../lib/client/notifications";
   import { ColorKeys } from "../../../types/colors";
-  import Spinner from "../../decoration/Spinner.svelte";
   import FileUpload from "../../forms/FileUpload.svelte";
   import List from "../../forms/List.svelte";
   import Button from "../../interactive/Button.svelte";
@@ -14,7 +13,7 @@
   interface Props {
     fonts: Option<string>[];
     fetchFonts: () => void;
-    showConfirmation: (message: string, confirmText?: string, cancelText?: string) => Promise<void>;
+    showConfirmation: (message: string, details?: string, notice?: boolean) => Promise<void>;
   }
 
   let {
@@ -25,26 +24,18 @@
 
   let fontFile: FileList | null = $state(null);
   let fontFileId = $state("");
-  let uploadingFontFile = $state(false);
 
   async function uploadFontFile() {
-    if (uploadingFontFile) return;
-    
     if (fontFile == null) {
       queueNotification(ColorKeys.Danger, t("settings.fonts.error.file"));
       return;
     }
 
-    uploadingFontFile = true;
-
     const fontFiles = fonts.map(x => x.value.split("/").pop() + ".ttf");
 
     if (fontFiles.includes(fontFile[0].name)) {
       const confirmed = await showConfirmation(t("settings.fonts.confirm.overwrite")).then(() => true).catch(() => false);
-      if (!confirmed) {
-        uploadingFontFile = false;
-        return;
-      }
+      if (!confirmed) return;
     }
 
     const formData = new FormData();
@@ -60,8 +51,6 @@
     }).catch((err) => {
       queueNotification(ColorKeys.Danger, t("settings.fonts.error.install", { values: { msg: err.message } }));
     });
-
-    uploadingFontFile = false;
   }
 
   async function deleteFont(font: string, name: string) {
@@ -130,11 +119,7 @@
 />
 {#if fontFile !== null}
   <Button color={ColorKeys.Success} onClick={uploadFontFile}>
-    {#if uploadingFontFile}
-      <Spinner/>
-    {:else}
-      {t("settings.fonts.upload")}
-    {/if}
+    {t("settings.fonts.upload")}
   </Button>
 {/if}
 <List

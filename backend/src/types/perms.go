@@ -22,6 +22,8 @@ const (
 	PermManageUserSettings   Permission = "manage_user_settings"
 	PermManageSessions       Permission = "manage_sessions"
 	PermManageResources      Permission = "manage_resources"
+	PermCreateBackups        Permission = "create_backups"
+	PermRestoreBackups       Permission = "restore_backups"
 	PermAdministrative       Permission = "administrative"
 )
 
@@ -54,6 +56,8 @@ var allPermList = []Permission{
 	PermManageUserSettings,
 	PermManageSessions,
 	PermManageResources,
+	PermCreateBackups,
+	PermRestoreBackups,
 	PermAdministrative,
 }
 

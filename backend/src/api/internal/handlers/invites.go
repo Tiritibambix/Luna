@@ -61,7 +61,7 @@ func GetInviteQrCode(c *gin.Context) {
 		return
 	}
 
-	u.ResponseWithFile(files.NewVolatileFile(fmt.Sprintf("invite-%s.png", invite.Code), qrCode))
+	u.ResponseWithFile(files.NewVolatileFile(fmt.Sprintf("invite-%s.png", invite.Code), qrCode), "image/png")
 }
 
 func PutInvite(c *gin.Context, body *struct {

@@ -66,6 +66,7 @@ notification:
 
 confirmation:
   title: "Bestätigung"
+  notice: "Anmerkung"
   irreversible: "Dieser Vorgang ist nicht umkehrbar."
   password:
     title: "Authentifikation"
@@ -576,6 +577,25 @@ settings:
     title: "OAuth 2.0"
     new: "Neuen OAuth 2.0 Client registrieren"
     list: "Registrierte OAuth 2.0 Clients"
+  backups:
+    title: "Backups"
+    create: "Backup erstellen"
+    file: "Backup-Datei hochladen"
+    restore: "Aus der Backup-Datei wiederherstellen"
+    restart: "Die Backup-Wiederherstellung war erfolgreich.\nEs empfiehlt sich nun den Backend-Server und die Datenback neuzustarten."
+    confirm: "Möchten Sie wirklich das System aus der Backup-Datei wiederherstellen?\nAlles wird durch das Backup überschrieben."
+    error:
+      file: "Fehlende oder korrumpierte Backup-Datei"
+      restore: "Das Backup konnte nicht wiedereingepsielt werden: {$msg}"
+    encryption:
+      title: "Backup-Verschlüsselung"
+      desc:
+        create: "Aus Sicherheitsgründen ist es empfehlenswert das Backup mit einem Kennwort abzusichern."
+        restore: "Falls die Backup-Datei mit einem Kennwort abgesichert wurde, muss diese nun wieder eingegeben werden."
+      enable:
+        create: "Backup-Verschlüsselung aktivieren"
+        restore: "Die Backup-Datei ist verschlüsselt"
+      password: "Verschlüsselungs-Kennwort"
   admin:
     title: "Administrativ"
     confirm:
@@ -664,17 +684,17 @@ validation:
     location:
       unknown: "Nicht unterstützter iCal Dateiursprung"
 
-  repository:
-    error:
-      event:
-        fetch: "Es konnten keine Ereignisse aus {$name} abgerufen werden: {$msg}"
-      calendar:
-        fetch: "Es konnten keine Kalendar aus {$name} abgerufen werden: {$msg}"
-      reorder:
-        source: "Die Quellen konnten nicht umsortiert werden"
-        calendar: "Die Kalendar konnten nicht umsortiert werden"
-    info:
-      hidden: "Das Ereignis {$name} wurde zu einem verborgenen Kalendar hinzugefügt."
+repository:
+  error:
+    event:
+      fetch: "Es konnten keine Ereignisse aus {$name} abgerufen werden: {$msg}"
+    calendar:
+      fetch: "Es konnten keine Kalendar aus {$name} abgerufen werden: {$msg}"
+    reorder:
+      source: "Die Quellen konnten nicht umsortiert werden"
+      calendar: "Die Kalendar konnten nicht umsortiert werden"
+  info:
+    hidden: "Das Ereignis {$name} wurde zu einem verborgenen Kalendar hinzugefügt."
 
 perms:
   read_events: "Ereignisse lesen"
@@ -696,4 +716,6 @@ perms:
   manage_user_settings: "Nutzerpräferenzen verwalten"
   manage_sessions: "Nutzersessionen verwalten"
   manage_resources: "Schriftarten und Farbstile verwalten"
+  create_backups: "Backups erstellen"
+  restore_backups: "Backups wiederherstellen"
   administrative: "Administrativ"

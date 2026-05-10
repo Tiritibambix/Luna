@@ -194,8 +194,8 @@ export class Repository {
       formData.set("date_all_day", event.date.allDay ? "true" : "false");
       if (event.date.recurrence) {
         if (event.date.recurrence.RRULE) formData.set("date_rrule", event.date.recurrence.RRULE);
-        if (event.date.recurrence.RDATE) formData.set("date_rrule", event.date.recurrence.RDATE);
-        if (event.date.recurrence.EXDATE) formData.set("date_rrule", event.date.recurrence.EXDATE);
+        if (event.date.recurrence.RDATE) formData.set("date_rdate", event.date.recurrence.RDATE);
+        if (event.date.recurrence.EXDATE) formData.set("date_exdate", event.date.recurrence.EXDATE);
       }
     }
     if (changes.color) {

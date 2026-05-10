@@ -23,7 +23,7 @@
   import { t } from "@sveltia/i18n";
 
   interface Props {
-    showModal?: (source?: SourceModel) => Promise<SourceModel>;
+    showModal?: (source?: SourceModel, anchor?: HTMLElement) => Promise<SourceModel>;
   }
 
   let {
@@ -33,12 +33,12 @@
   const settings = getSettings();
   const oauthClients = getOauthClients();
 
-  let showModalInternal: (initial?: SourceModel, edit?: boolean) => Promise<SourceModel> = $state(Promise.reject);
+  let showModalInternal: (initial?: SourceModel, edit?: boolean, anchor?: HTMLElement) => Promise<SourceModel> = $state(Promise.reject);
 
   let sourceDetailed: SourceModel = $state(EmptySource);
   let originalSource: SourceModel;
 
-  showModal = async (source?: SourceModel): Promise<SourceModel> => {
+  showModal = async (source?: SourceModel, anchor?: HTMLElement): Promise<SourceModel> => {
     oauthClients.fetch();
     oauthClients.fetchTokens();
 
@@ -84,7 +84,7 @@
       if (sourceDetailed.settings.file !== null) originalSource.settings.file = sourceDetailed.settings.file;
     }
 
-    return showModalInternal(sourceDetailed);
+    return showModalInternal(sourceDetailed, false, anchor);
   };
 
   let editMode: boolean = $state(false);

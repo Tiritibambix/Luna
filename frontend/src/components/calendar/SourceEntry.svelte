@@ -91,7 +91,11 @@
   //}
 </style>
 
-<div class="sourceEntry" use:draggable={{ ownClass: "sourceEntry", childClasses: ["calendarEntry"], callback: reorderSource}}>
+<div
+  class="sourceEntry"
+  use:draggable={{ ownClass: "sourceEntry", childClasses: ["calendarEntry"], callback: reorderSource}}
+  id={`source-${source.id}`}
+>
   <button onclick={showModalInternal} use:focusIndicator={{ type: "underline" }}>
     {source.name}
   </button>

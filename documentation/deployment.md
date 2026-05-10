@@ -32,15 +32,12 @@ services:
     container_name: luna-backend
     volumes:
       - /srv/luna/data:/data
+      - /srv/luna/postgres.sock:/var/run/postgresql
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     environment:
       PUBLIC_URL: https://cal.example.com
-      DB_HOST: luna-postgres
-      DB_PORT: 5432
-      DB_USERNAME: luna
-      DB_PASSWORD: luna
-      DB_DATABASE: luna
+      DB_URL: "host=/var/run/postgresql user=luna dbname=luna"
     depends_on:
       - luna-postgres
     build:
@@ -48,10 +45,11 @@ services:
       dockerfile: Dockerfile
 
   luna-postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: luna-postgres
     volumes:
-      - /srv/luna/postgres:/var/lib/postgresql/data
+      - /srv/luna/postgres:/var/lib/postgresql
+      - /srv/luna/postgres.sock:/var/run/postgresql
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     environment:
@@ -65,7 +63,7 @@ For baremetal deployment, you must ensure your system has:
 - **make**
 - **bun** (v1.2.5 or higher)
 - **go** (go1.23 or higher)
-- a running **postgres** (version 16 or higher) database
+- a running **postgres** (version 18 or higher) database
 
 For the backend, create an `.env` file in the `backend/src` directory inside the repository and fill it out accordingly to `.env.example`. To start the backend in development mode, run `make` inside the `backend` directory.
 

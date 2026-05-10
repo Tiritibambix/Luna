@@ -24,5 +24,5 @@ func GetFile(c *gin.Context) {
 		return
 	}
 
-	u.ResponseWithFile(file)
+	u.ResponseWithFile(file, "application/text/plain")
 }

@@ -65,6 +65,7 @@ notification:
 
 confirmation:
   title: "Potwierdzenie"
+  notice: "Powiadomienie"
   irreversible: "Ta akcja jest nieodwracalna."
   password:
     title: "Uwierzytelnienie"
@@ -556,7 +557,7 @@ settings:
     error:
       install: "Nie udało się zainstalować motywu: {$msg}"
       uninstall: "Nie udało się usunąć motywu: {$msg}"
-      file: "Brakujący app uszkodzony plik z motywem"
+      file: "Brakujący albo uszkodzony plik z motywem"
     confirm:
       uninstall: "Czy na pewno chcesz usunąć motyw o nazwie {$name}?"
       overwrite: "Motyw o tej samej nazwie już istnieje.\nKontynuowanie nadpisze ten motyw.\nCzy kontynuować?"
@@ -572,7 +573,7 @@ settings:
     error:
       install: "Nie udało się zainstalować czcionki: {$msg}"
       uninstall: "Nie udało się usunąć czcionki: {$msg}"
-      file: "Brakujący app uszkodzony plik z czcionką"
+      file: "Brakujący albo uszkodzony plik z czcionką"
     confirm:
       uninstall: "Czy na pewno chcesz usunąć czcionkę o nazwie {$name}?"
       overwrite: "Czcionka o tej samej nazwie już istnieje.\nKontynuowanie nadpisze tą czcionkę.\nCzy kontynuować?"
@@ -580,6 +581,25 @@ settings:
     title: "OAuth 2.0"
     new: "Zarejestruj klienta OAuth 2.0"
     list: "Zarejestrowani klienci OAuth 2.0"
+  backups:
+    title: "Kopie Zapasowe"
+    create: "Utwórz kopię zapasową"
+    file: "Wgraj kopię zapasową"
+    restore: "Przywróć z kopii zapasowej"
+    restart: "Przywracanie z kopii zapasowej powiodło się.\nZaleca się zrestartować serwer backend oraz bazę danych."
+    confirm: "Czy na pewno chcesz przywrócić kopię zapasową?\nWszystko zostanie nadpisane."
+    error:
+      file: "Brakujący albo uszkodzony plik kopii zapasowej"
+      restore: "Nie udało się przywrócić kopii zapasowej: {$msg}"
+    encryption:
+      title: "Szyfrowanie kopii zapasowej"
+      desc:
+        create: "Ze względów bezpieczeństwa zaleca się zabezpieczyć kopię zapasową hasłem."
+        restore: "Jeżeli kopia zapasowa została zabezpieczona, należy wpisać oryginalne hasło."
+      enable:
+        create: "Zabezpiecz kopię zapasową"
+        restore: "Kopia zapasowa jest zabezpieczona"
+      password: "Hasło zabezpieczające"
   admin:
     title: "Administratywne"
     confirm:
@@ -668,17 +688,17 @@ validation:
     location:
       unknown: "Niewspierana lokalizacja pliku iCal"
 
-  repository:
-    error:
-      event:
-        fetch: "Nie udało się pobrać wydarzeń z {$name}: {$msg}"
-      calendar:
-        fetch: "Nie udało się pobrać kalendarzy z {$name}: {$msg}"
-      reorder:
-        source: "Nie udało się zmienić kolejności źródłap"
-        calendar: "Nie udało się zmienić kolejności kalendarza."
-    info:
-      hidden: "Wydarzenie {$name} zostało dodane do ukrytego kalendarza."
+repository:
+  error:
+    event:
+      fetch: "Nie udało się pobrać wydarzeń z {$name}: {$msg}"
+    calendar:
+      fetch: "Nie udało się pobrać kalendarzy z {$name}: {$msg}"
+    reorder:
+      source: "Nie udało się zmienić kolejności źródłap"
+      calendar: "Nie udało się zmienić kolejności kalendarza."
+  info:
+    hidden: "Wydarzenie {$name} zostało dodane do ukrytego kalendarza."
 
 perms:
   read_events: "Czytanie events"
@@ -700,4 +720,6 @@ perms:
   manage_user_settings: "Zarządzanie ustawień użytkownika"
   manage_sessions: "Zarządzanie sesji"
   manage_resources: "Zarządzanie czcionek i motywów"
+  create_backups: "Tworzenie kopii zapasowych"
+  restore_backups: "Przywracanie kopii zapasowych"
   administrative: "Administratywne"

@@ -15,8 +15,15 @@ COPY VERSION .
 COPY src src
 RUN make build
 
+# Install runtime dependencies
+FROM alpine:latest AS runtime
+RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/main' > /etc/apk/repositories
+RUN apk update
+RUN apk upgrade
+RUN apk add postgresql18-client
+
 # Run the binary
-FROM alpine:latest
+FROM runtime AS final
 WORKDIR /app
 RUN apk add --no-cache tzdata
 COPY --from=build /app/src/luna-backend .

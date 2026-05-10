@@ -15,7 +15,7 @@
     lightThemes: Option<string>[];
     darkThemes: Option<string>[];
     fetchThemes: () => void;
-    showConfirmation: (message: string, confirmText?: string, cancelText?: string) => Promise<void>;
+    showConfirmation: (message: string, details?: string, notice?: boolean) => Promise<void>;
   }
 
   let {
@@ -27,26 +27,18 @@
 
   let themeFile: FileList | null = $state(null);
   let themeFileId = $state("");
-  let uploadingThemeFile = $state(false);
 
   async function uploadThemeFile() {
-    if (uploadingThemeFile) return;
-    
     if (themeFile == null) {
       queueNotification(ColorKeys.Danger, t("settings.themes.error.file"));
       return;
     }
 
-    uploadingThemeFile = true;
-
     const themeFiles = lightThemes.concat(darkThemes).map(x => x.value.split("/").pop() + ".css");
 
     if (themeFiles.includes(themeFile[0].name)) {
       const confirmed = await showConfirmation(t("settings.themes.confirm.overwrite")).then(() => true).catch(() => false);
-      if (!confirmed) {
-        uploadingThemeFile = false;
-        return;
-      }
+      if (!confirmed) return;
     }
 
     const formData = new FormData();
@@ -62,8 +54,6 @@
     }).catch((err) => {
       queueNotification(ColorKeys.Danger, t("settings.themes.error.install", { values: { msg: err.message } }));
     });
-
-    uploadingThemeFile = false;
   }
 
   async function deleteTheme(theme: string, name: string, isLightTheme: boolean) {
@@ -131,11 +121,7 @@
 />
 {#if themeFile !== null}
   <Button color={ColorKeys.Success} onClick={uploadThemeFile}>
-    {#if uploadingThemeFile}
-      <Spinner/> <!-- TODO: Spinner does not have the same height as text -->
-    {:else}
-      {t("settings.themes.upload")}
-    {/if}
+    {t("settings.themes.upload")}
   </Button>
 {/if}
 <List

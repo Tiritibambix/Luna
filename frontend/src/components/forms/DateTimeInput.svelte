@@ -8,8 +8,8 @@
   import { date, time } from "@sveltia/i18n";
 
   interface Props {
-    value: Date;
-    allDay: boolean;
+    value: Date | null;
+    allDay?: boolean;
     placeholder: string;
     name: string;
     editable: boolean;
@@ -19,7 +19,7 @@
 
   let {
     value = $bindable(),
-    allDay,
+    allDay = false,
     placeholder,
     name,
     editable,
@@ -35,7 +35,7 @@
 
   async function dateClick(e: MouseEvent | KeyboardEvent) {
     if (!editable) return;
-    await showDateModal(value).then((result) => {
+    await showDateModal(value || new Date()).then((result) => {
       value = result;
       onChange(result);
     }).catch(NoOp).finally(() => {
@@ -47,7 +47,7 @@
 
   async function timeClick(e: MouseEvent | KeyboardEvent) {
     if (!editable) return;
-    await showTimeModal(value).then((result) => {
+    await showTimeModal(value || new Date()).then((result) => {
       value = result;
       onChange(result);
     }).catch(NoOp).finally(() => {
@@ -119,7 +119,7 @@
       tabindex={editable ? 0 : -1}
       use:focusIndicator
     >
-      {date(value)}
+      {date(value || new Date())}
     </button>
     {#if !allDay}
       <button
@@ -129,7 +129,7 @@
         tabindex={editable ? 0 : -1}
         use:focusIndicator
       >
-        {time(value, { hour: "2-digit", minute: "2-digit" })}
+        {time(value || new Date(), { hour: "2-digit", minute: "2-digit" })}
       </button>
     {/if}
   </div>
