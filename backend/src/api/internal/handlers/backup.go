@@ -20,7 +20,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var archivedKeyFileRegex = regexp.MustCompile("keys/([^\\s\\./]+)\\.key")
+var archivedKeyFileRegex = regexp.MustCompile(`keys/([^\s\./]+)\.key`)
 
 type backupMetadata struct {
 	Version   types.Version `json:"version"`
