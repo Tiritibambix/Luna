@@ -14,12 +14,11 @@ import { Theme } from "$lib/client/data/theme.svelte";
 import { Users } from "$lib/client/data/users.svelte";
 import { Settings } from "$lib/client/data/settings.svelte";
 import { OauthClients } from "$lib/client/data/oauth.svelte";
-import { browser } from "$app/environment";
 
 import "$lib/common/i18n";
-import { getLocaleFromNavigator, getLocaleFromQueryString, locale, locales, waitLocale } from "@sveltia/i18n";
 import { UserSettingKeys } from "../../types/settings";
 import { loadLanguage } from "$lib/common/i18n";
+import { encodeRedirectUrl } from "../../lib/common/url";
 
 function getSingletons(version: string, preloadedSettings: { userData: any, userSettings: any, globalSettings: any } | null = null): {
   connectivity: Connectivity;
@@ -69,10 +68,14 @@ export const load: PageLoad = async (event: LoadEvent) => {
   if (event.url.pathname !== "/version" && [VersionCompatibility.BackendOutdatedMajor, VersionCompatibility.FrontendOutdatedMajor].includes(isCompatibleWithBackend(version)))
     redirect(302, `/version?redirect=${encodeURIComponent(event.url.pathname)}`);
 
-  for (const path of unprivilegedPaths) if (event.url.pathname.startsWith(`/${path}`)) return {
-    version: version,
-    singletons: getSingletons(version)
-  }; 
+  for (const path of unprivilegedPaths) {
+    if (!event.url.pathname.startsWith(`/${path}`)) continue;
+    await loadLanguage(null);
+    return {
+      version: version,
+      singletons: getSingletons(version)
+    }; 
+  }
 
   const results = await Promise.all([
     fetchJsonFromEvent(event, "/api/users/self", {}, true),
@@ -80,7 +83,7 @@ export const load: PageLoad = async (event: LoadEvent) => {
     fetchJsonFromEvent(event, "/api/settings", {}, true)
   ]).catch((err) => {
     if (err.message.includes("Unauthorized") || err.message.includes("Session expired")) {
-      redirect(302, `/login?redirect=${encodeURIComponent(event.url.pathname)}&expired=true`);
+      redirect(302, `/login?redirect=${encodeRedirectUrl(new URL(document.location.href))}&expired=true`);
     }
     return null; 
   });
