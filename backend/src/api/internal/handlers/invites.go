@@ -9,7 +9,6 @@ import (
 	"luna-backend/files"
 	"luna-backend/types"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -65,44 +64,17 @@ func GetInviteQrCode(c *gin.Context) {
 	u.ResponseWithFile(files.NewVolatileFile(fmt.Sprintf("invite-%s.png", invite.Code), qrCode))
 }
 
-func PutInvite(c *gin.Context) {
+func PutInvite(c *gin.Context, body *struct {
+	Email    string        `json:"email" form:"email" binding:"email"`
+	Duration time.Duration `json:"duration" form:"duration" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
 	// Invite author
 	userId := util.GetUserId(c)
 
-	// Invitee email
-	// Optional, can either be a valid email address or empty
-	email := c.PostForm("email")
-	if email != "" {
-		if err := util.IsValidEmail(email); err != nil {
-			u.Error(errors.New().Status(http.StatusBadRequest).
-				AddErr(errors.LvlDebug, err).
-				Append(errors.LvlPlain, "Invalid email address"),
-			)
-			return
-		}
-	}
-
 	// Calculate duration
-	durationString := c.PostForm("duration")
-	if durationString == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Missing duration"),
-		)
-		return
-	}
-
-	duration, err := strconv.Atoi(durationString)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Invalid duration"),
-		)
-		return
-	}
-
-	if duration < 0 {
+	if body.Duration < 0 {
 		u.Error(errors.New().Status(http.StatusBadRequest).
 			Append(errors.LvlDebug, "Duration cannot be negative").
 			Append(errors.LvlPlain, "Invalid duration"),
@@ -110,7 +82,7 @@ func PutInvite(c *gin.Context) {
 		return
 	}
 
-	if duration > int(constants.MaxInviteDuration.Seconds()) {
+	if body.Duration > constants.MaxInviteDuration {
 		u.Error(errors.New().Status(http.StatusBadRequest).
 			Append(errors.LvlDebug, "Duration cannot be greater than %d hours", (int)(constants.MaxInviteDuration.Hours())).
 			Append(errors.LvlPlain, "Invalid duration"),
@@ -142,9 +114,9 @@ func PutInvite(c *gin.Context) {
 	// Create invite
 	invite := &types.RegistrationInvite{
 		Author:    userId,
-		Email:     email,
+		Email:     body.Email,
 		CreatedAt: currentTime,
-		Expires:   currentTime.Add(time.Duration(duration) * time.Second),
+		Expires:   currentTime.Add(body.Duration),
 		Code:      code,
 	}
 

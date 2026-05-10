@@ -199,3 +199,7 @@ func HasAdminPrivilegesAndReportError(c *gin.Context) bool {
 
 	return true
 }
+
+func GetParsedBody(c *gin.Context) any {
+	return c.MustGet("body")
+}

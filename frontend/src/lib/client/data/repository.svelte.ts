@@ -120,21 +120,21 @@ export class Repository {
     if (changes.type || changes.settings) {
       switch (source.type) {
         case "caldav":
-          formData.set("url", source.settings.url);
+          formData.set("source_url", source.settings.url);
           break;
         case "ical":
           switch (source.settings.location) {
             case "remote":
-              formData.set("location", "remote");
-              formData.set("url", source.settings.url);
+              formData.set("source_location", "remote");
+              formData.set("source_url", source.settings.url);
               break
             case "database":
-              formData.set("location", "database");
-              formData.set("file", source.settings.file.item(0));
+              formData.set("source_location", "database");
+              formData.set("source_file", source.settings.file.item(0));
               break;
             case "local":
-              formData.set("location", "local");
-              formData.set("path", source.settings.path);
+              formData.set("source_location", "local");
+              formData.set("source_path", source.settings.path);
               break;
             default:
               throw new Error(t("validation.source.location.unknown"));

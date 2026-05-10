@@ -114,18 +114,18 @@ Luna uses its own (UU)IDs for every resource accessed through it. Therefore, the
 - **Purpose**: Puts a new calendar source in the database. The authentication information is encrypted by PostegreSQL.
 
 Depending on the `type` field, additional information may need to be passed:
-- `caldav`: `url`
+- `caldav`: `source_url`
 - `ical`:
-   - `location` (one of `remote`, `database` or `local`)
-   - `url` (if chosen `remote`)
-   - `file` (if chosen `database`)
-   - `path` (if chosen `local`)
+   - `source_location` (one of `remote`, `database` or `local`)
+   - `source_url` (if chosen `remote`)
+   - `source_file` (if chosen `database`)
+   - `source_path` (if chosen `local`)
 
 Depending on the `auth_type` field, additional information may need to be passed:
 - `none`: No additional information
-- `basic`: `username`, `password`
-- `bearer`: `token`
-- `oauth`: `client` and `tokens`
+- `basic`: `auth_username`, `auth_password`
+- `bearer`: `auth_token`
+- `oauth`: `auth_client` and `auth_tokens`
 
 #### Patch Source
 - **Path**: ``/api/sources/<ID>``
@@ -349,9 +349,9 @@ The description field is optional. Either the end date or the event duration is 
 
 Depending on the `auth_type` field, additional information may need to be passed:
 - `none`: No additional information
-- `basic`: `username`, `password`
-- `bearer`: `token`
-- `oauth`: `client` and `tokens`
+- `basic`: `auth_username`, `auth_password`
+- `bearer`: `auth_token`
+- `oauth`: `auth_client` and `auth_tokens`
 
 ### Invites
 #### Get Invites

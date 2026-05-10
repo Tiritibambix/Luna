@@ -183,7 +183,6 @@ func main() {
 	// Api Server
 	apiLogger := logger.WithField("module", "api")
 	api := api.NewApi(db, commonConfig, apiLogger)
-	mainLogger.Infof("started luna-backend %s", commonConfig.Version.String())
 
 	// Scheduled tasks
 	cronLogger := logger.WithField("module", "cron")
@@ -211,5 +210,6 @@ func main() {
 	startGoroutine(oauthInvalidationService.Start, &wg)
 	startGoroutine(c.Start, &wg)
 	startGoroutine(api.Start, &wg)
+	mainLogger.Infof("started luna-backend %s", commonConfig.Version.String())
 	wg.Wait()
 }

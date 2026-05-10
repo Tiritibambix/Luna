@@ -15,23 +15,15 @@ import (
 // because detailed error messages about authenticatino checks might pose a
 // security risk.
 
-func Login(c *gin.Context) {
+func Login(c *gin.Context, body *struct {
+	Username string `json:"username" form:"username" binding:"alphanumunicode,required"`
+	Password string `json:"password" form:"password" binding:"required"`
+}) {
 	// Parsing
 	u := util.GetUtil(c)
 
-	credentials := auth.BasicAuth{}
-	if err := c.ShouldBind(&credentials); err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlDebug, "Could not parse credentials").
-			Append(errors.LvlWordy, "Malformed request").
-			Append(errors.LvlBroad, "Could not log in"),
-		)
-		return
-	}
-
-	usernameErr := util.IsValidUsername(credentials.Username)
-	passwordErr := util.IsValidPassword(credentials.Password)
+	usernameErr := util.IsValidUsername(body.Username)
+	passwordErr := util.IsValidPassword(body.Password)
 	if usernameErr != nil || passwordErr != nil {
 		u.Error(errors.New().Status(http.StatusBadRequest).
 			AddErr(errors.LvlDebug, usernameErr).AndErr(passwordErr).
@@ -43,16 +35,16 @@ func Login(c *gin.Context) {
 	}
 
 	// Check if the user exists
-	userId, err := u.Tx.Queries().GetUserIdFromUsername(credentials.Username)
+	userId, err := u.Tx.Queries().GetUserIdFromUsername(body.Username)
 	if err != nil {
 		u.Error(err.Status(http.StatusUnauthorized).
-			Append(errors.LvlDebug, "Could not find ID for user %v", credentials.Username).
+			Append(errors.LvlDebug, "Could not find ID for user %v", body.Username).
 			Append(errors.LvlPlain, "Invalid credentials").
 			Append(errors.LvlBroad, "Could not log in"),
 		)
 
 		// Hash the wrong password to prevent timing attacks
-		_, _ = auth.SecurePassword(credentials.Password, u.Config)
+		_, _ = auth.SecurePassword(body.Password, u.Config)
 
 		return
 	}
@@ -67,13 +59,13 @@ func Login(c *gin.Context) {
 		)
 
 		// Hash the wrong password to prevent timing attacks
-		_, _ = auth.SecurePassword(credentials.Password, u.Config)
+		_, _ = auth.SecurePassword(body.Password, u.Config)
 
 		return
 	}
 
 	// Verify the password
-	if !auth.VerifyPassword(credentials.Password, savedPassword, u.Config) {
+	if !auth.VerifyPassword(body.Password, savedPassword, u.Config) {
 		u.Error(errors.New().Status(http.StatusUnauthorized).
 			Append(errors.LvlDebug, "Wrong password").
 			Append(errors.LvlPlain, "Invalid credentials").
@@ -84,8 +76,8 @@ func Login(c *gin.Context) {
 
 	// Silently update the user's password to a newer algorithm if applicable
 	if !auth.PasswordStillSecure(savedPassword) {
-		u.Logger.Infof("updating password %v for user to newer algorithm", credentials.Username)
-		newPassword, err := auth.SecurePassword(credentials.Password, u.Config)
+		u.Logger.Infof("updating password %v for user to newer algorithm", body.Username)
+		newPassword, err := auth.SecurePassword(body.Password, u.Config)
 		if err != nil {
 			u.Error(err.
 				Append(errors.LvlDebug, "Could not rehash password").
@@ -176,14 +168,12 @@ func Login(c *gin.Context) {
 	u.Success(&gin.H{"token": token})
 }
 
-type registerPayload struct {
-	Username   string `form:"username"`
-	Password   string `form:"password"`
-	Email      string `form:"email"`
-	InviteCode string `form:"invite_code"`
-}
-
-func Register(c *gin.Context) {
+func Register(c *gin.Context, body *struct {
+	Username   string `json:"username" form:"username" binding:"alphanumunicode,required"`
+	Password   string `json:"password" form:"password" binding:"required"`
+	Email      string `json:"email" form:"email" binding:"email,required"`
+	InviteCode string `json:"invite_code" form:"invite_code" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
 	// Check if any users exist to know if this user should be an admin
@@ -197,24 +187,11 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate the payload
-	payload := registerPayload{}
-	if err := c.ShouldBind(&payload); err != nil {
+	usernameErr := util.IsValidUsername(body.Username)
+	passwordErr := util.IsValidPassword(body.Password)
+	if usernameErr != nil || passwordErr != nil {
 		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlDebug, "Could not parse payload").
-			Append(errors.LvlWordy, "Malformed request").
-			Append(errors.LvlBroad, "Could not register"),
-		)
-		return
-	}
-
-	usernameErr := util.IsValidUsername(payload.Username)
-	passwordErr := util.IsValidPassword(payload.Password)
-	emailErr := util.IsValidEmail(payload.Email)
-	if usernameErr != nil || passwordErr != nil || emailErr != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, usernameErr).AndErr(passwordErr).AndErr(emailErr).
+			AddErr(errors.LvlDebug, usernameErr).AndErr(passwordErr).
 			Append(errors.LvlDebug, "Input did not pass validation").
 			Append(errors.LvlWordy, "Malformed request").
 			Append(errors.LvlPlain, "Could not register"),
@@ -224,8 +201,8 @@ func Register(c *gin.Context) {
 
 	// Check invite code and remove it from the database
 	var invite *types.RegistrationInvite
-	if payload.InviteCode != "" {
-		invite, err = u.Tx.Queries().GetValidInvite(payload.Email, payload.InviteCode)
+	if body.InviteCode != "" {
+		invite, err = u.Tx.Queries().GetValidInvite(body.Email, body.InviteCode)
 		if err != nil {
 			u.Error(err)
 			return
@@ -250,7 +227,7 @@ func Register(c *gin.Context) {
 	}
 
 	// Hash the password
-	securedPassword, err := auth.SecurePassword(payload.Password, u.Config)
+	securedPassword, err := auth.SecurePassword(body.Password, u.Config)
 	if err != nil {
 		u.Error(err.
 			Append(errors.LvlDebug, "Could not hash password").
@@ -262,13 +239,13 @@ func Register(c *gin.Context) {
 
 	// Construct the user
 	user := &types.User{
-		Username:           payload.Username,
-		Email:              payload.Email,
+		Username:           body.Username,
+		Email:              body.Email,
 		Admin:              !usersExist,
 		Searchable:         true,
 		ProfilePictureType: "static",
 		ProfilePictureFile: types.EmptyId(),
-		ProfilePictureUrl:  util.GetDefaultProfilePictureUrl(!u.Config.Settings.EnableGravatar.Enabled, payload.Email),
+		ProfilePictureUrl:  util.GetDefaultProfilePictureUrl(!u.Config.Settings.EnableGravatar.Enabled, body.Email),
 	}
 
 	// Insert the user into the database

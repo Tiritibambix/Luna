@@ -28,6 +28,41 @@ func (httpClient *httpClient) Do(req *http.Request) (*http.Response, error) {
 	return res, nil
 }
 
+// Unmarshal JSON
+
+func EmptyAuthByType(authType string) (types.AuthMethod, error) {
+	// Find the appropriate type
+	switch authType {
+	case "":
+		fallthrough
+	case constants.AuthNone:
+		return &NoAuth{}, nil
+	case constants.AuthBasic:
+		return &BasicAuth{}, nil
+	case constants.AuthBearer:
+		return &BearerAuth{}, nil
+	case constants.AuthOauth:
+		return &OauthAuth{}, nil
+	default:
+		return nil, fmt.Errorf("unknown authentication type: %v", authType)
+	}
+}
+
+func AuthFromJson(authType string, rawBody json.RawMessage) (types.AuthMethod, error) {
+	auth, err := EmptyAuthByType(authType)
+	if err != nil {
+		return nil, err
+	}
+
+	// Try to unmarshal
+	err = json.Unmarshal(rawBody, auth)
+	if err != nil {
+		return nil, err
+	}
+
+	return auth, nil
+}
+
 // No Authentication
 
 type NoAuth struct{}
@@ -59,8 +94,8 @@ func NewNoAuth() types.AuthMethod {
 // Password and Username
 
 type BasicAuth struct {
-	Username string `json:"username" form:"username"`
-	Password string `json:"password" form:"password"`
+	Username string `json:"username" form:"auth_username" binding:"required"`
+	Password string `json:"password" form:"auth_password" binding:"required"`
 }
 
 func (auth BasicAuth) Do(req *http.Request) (*http.Response, *errors.ErrorTrace) {
@@ -95,7 +130,7 @@ func NewBasicAuth(username, password string) types.AuthMethod {
 // Bearer Token
 
 type BearerAuth struct {
-	Token string `json:"token" form:"token"`
+	Token string `json:"token" form:"auth_token"`
 }
 
 func (auth BearerAuth) Do(req *http.Request) (*http.Response, *errors.ErrorTrace) {
@@ -130,9 +165,9 @@ func NewBearerAuth(token string) types.AuthMethod {
 // OAuth2
 
 type OauthAuth struct {
-	TokensID types.ID `json:"tokens_id" form:"tokens_id"`
-	ClientId types.ID `json:"client_id" form:"client_id"`
-	UserId   types.ID `json:"user_id" form:"user_id"`
+	TokensID types.ID `json:"tokens" form:"auth_tokens" binding:"required"`
+	ClientId types.ID `json:"client" form:"auth_client" binding:"required"`
+	UserId   types.ID `json:"user_id" form:"auth_user_id"`
 
 	client *types.OauthClient `json:"-" form:""`
 	ctx    context.Context    `json:"-" form:""`

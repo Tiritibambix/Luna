@@ -5,8 +5,6 @@ import (
 	"luna-backend/cache"
 	"luna-backend/errors"
 	"luna-backend/types"
-	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -122,7 +120,11 @@ func GetCalendar(c *gin.Context) {
 	u.Success(&gin.H{"calendar": convertedCal})
 }
 
-func PutCalendar(c *gin.Context) {
+func PutCalendar(c *gin.Context, body *struct {
+	Name  string      `json:"name" form:"name" binding:"required,alphanumunicode"`
+	Desc  string      `json:"desc" form:"desc" binding:"alphanumunicode"`
+	Color types.Color `json:"color" form:"color" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
@@ -141,24 +143,7 @@ func PutCalendar(c *gin.Context) {
 		return
 	}
 
-	calName := c.PostForm("name")
-	if calName == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlWordy, "Missing calendar name"))
-		return
-	}
-
-	calDesc := c.PostForm("desc")
-
-	calColor, err := types.ParseColor(c.PostForm("color"))
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlWordy, "Missing or malformed color"))
-		return
-	}
-
-	cal, tr := source.AddCalendar(calName, calDesc, calColor, u.Tx.Queries())
+	cal, tr := source.AddCalendar(body.Name, body.Desc, &body.Color, u.Tx.Queries())
 	if tr != nil {
 		u.Error(tr)
 		return
@@ -173,7 +158,12 @@ func PutCalendar(c *gin.Context) {
 	u.Success(&gin.H{"id": cal.GetId().String()})
 }
 
-func PatchCalendar(c *gin.Context) {
+func PatchCalendar(c *gin.Context, body *struct {
+	Name       *string      `json:"name" form:"name" binding:"required,alphanumunicode"`
+	Desc       *string      `json:"desc" form:"desc" binding:"alphanumunicode"`
+	Color      *types.Color `json:"color" form:"color" binding:"required"`
+	Overridden bool         `json:"overridden" form:"overridden"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
@@ -190,29 +180,17 @@ func PatchCalendar(c *gin.Context) {
 		return
 	}
 
-	newCalName := c.PostForm("name")
-
-	newCalColor, colErr := types.ParseColor(c.PostForm("color"))
-
-	newCalDesc := c.PostForm("desc")
-
-	isOverridden := c.PostForm("overridden") == "true"
-
-	if !isOverridden && (newCalName == "" && newCalDesc == "" && colErr != nil) {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlWordy, "Nothing to change"))
-		return
+	if body.Name == nil {
+		oldName := calendar.GetName()
+		body.Name = &oldName
 	}
 
-	if newCalName == "" && !isOverridden {
-		newCalName = calendar.GetName()
+	if body.Color == nil {
+		oldColor := calendar.GetColor()
+		body.Color = oldColor
 	}
 
-	if (colErr != nil || newCalColor.IsEmpty()) && !isOverridden {
-		newCalColor = calendar.GetColor()
-	}
-
-	_, err = calendar.GetSource().EditCalendar(calendar, newCalName, newCalDesc, newCalColor, isOverridden, u.Tx.Queries())
+	_, err = calendar.GetSource().EditCalendar(calendar, *body.Name, *body.Desc, body.Color, body.Overridden, u.Tx.Queries())
 	if err != nil {
 		u.Error(err)
 		return
@@ -253,7 +231,9 @@ func DeleteCalendar(c *gin.Context) {
 	u.Success(nil)
 }
 
-func ChangeCalendarDisplayOrder(c *gin.Context) {
+func ChangeCalendarDisplayOrder(c *gin.Context, body *struct {
+	Index uint16 `json:"index" form:"index" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
@@ -264,22 +244,7 @@ func ChangeCalendarDisplayOrder(c *gin.Context) {
 		return
 	}
 
-	newIndexStr := c.PostForm("index")
-	if newIndexStr == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "No index supplied"))
-		return
-	}
-
-	newIndex, err := strconv.ParseUint(newIndexStr, 10, 16)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Malformed index"))
-		return
-	}
-
-	tr = u.Tx.Queries().UpdateCalendarDisplayOrder(userId, calendarId, uint16(newIndex))
+	tr = u.Tx.Queries().UpdateCalendarDisplayOrder(userId, calendarId, body.Index)
 	if tr != nil {
 		u.Error(tr)
 		return

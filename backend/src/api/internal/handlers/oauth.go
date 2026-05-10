@@ -51,80 +51,30 @@ func GetOauthClients(c *gin.Context) {
 	})
 }
 
-func PutOauthClient(c *gin.Context) {
+func PutOauthClient(c *gin.Context, body *struct {
+	Name         string     `json:"name" form:"name" binding:"required,alphanumunicode"`
+	ClientId     string     `json:"client_id" form:"client_id" binding:"required,alphanumunicode"`
+	ClientSecret string     `json:"client_secret" form:"client_secret" binding:"required,alphanumunicode"`
+	BaseUrl      *types.Url `json:"base_url" form:"base_url" binding:"required"`
+	Scope        string     `json:"scope" form:"scope" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
-	// Oauth client name
-	clientName := c.Request.FormValue("name")
-	if clientName == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Name may not be empty"),
-		)
-		return
-	}
-
-	// Oauth client ID
-	clientId := c.Request.FormValue("client_id")
-	if clientId == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Client ID may not be empty"),
-		)
-		return
-	}
-
-	// Oauth client secret
-	clientSecret := c.Request.FormValue("client_secret")
-	if clientSecret == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Client secret may not be empty"),
-		)
-		return
-	}
-
-	// Oauth client base URL
-	rawBaseUrl := c.Request.FormValue("base_url")
-	if rawBaseUrl == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Base URL may not be empty"),
-		)
-		return
-	}
-
-	var err error
-	err = util.IsValidUrl(rawBaseUrl)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Invalid base URL").
-			AddErr(errors.LvlWordy, err),
-		)
-		return
-	}
-	baseUrl, err := types.NewUrl(rawBaseUrl)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Invalid base URL").
-			AddErr(errors.LvlWordy, err),
-		)
-		return
+	client := &types.OauthClient{
+		Name:         body.Name,
+		ClientId:     body.ClientId,
+		ClientSecret: body.BaseUrl.Scheme,
+		BaseUrl:      body.BaseUrl,
+		Scope:        body.Scope,
 	}
 
 	// Check if the client is valid
-	client := &types.OauthClient{
-		Name:         clientName,
-		ClientId:     clientId,
-		ClientSecret: clientSecret,
-		BaseUrl:      baseUrl,
-		Scope:        c.Request.FormValue("scope"),
-	}
-
 	tr := auth.FetchOauthUrls(client, u.Context)
 	if tr != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Invalid base URL").
-			AddErr(errors.LvlWordy, err),
+		u.Error(tr.
+			Append(errors.LvlWordy, "Could not determine OIDC URLs"),
 		)
+		return
 	}
 
 	// Insert
@@ -139,7 +89,13 @@ func PutOauthClient(c *gin.Context) {
 	})
 }
 
-func PatchOauthClient(c *gin.Context) {
+func PatchOauthClient(c *gin.Context, body *struct {
+	Name         string     `json:"name" form:"name" binding:"required,alphanumunicode"`
+	ClientId     string     `json:"client_id" form:"client_id" binding:"required,alphanumunicode"`
+	ClientSecret string     `json:"client_secret" form:"client_secret" binding:"required,alphanumunicode"`
+	BaseUrl      *types.Url `json:"base_url" form:"base_url" binding:"required"`
+	Scope        string     `json:"scope" form:"scope" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
 	// Client ID
@@ -149,73 +105,22 @@ func PatchOauthClient(c *gin.Context) {
 		return
 	}
 
-	// New client name
-	newClientName := c.Request.FormValue("name")
-	if newClientName == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Name may not be empty"),
-		)
-		return
-	}
-
-	// New client ID
-	newClientId := c.Request.FormValue("client_id")
-	if newClientId == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Client ID may not be empty"),
-		)
-		return
-	}
-
-	// New client secret
-	newClientSecret := c.Request.FormValue("client_secret")
-
-	// New client base URL
-	rawBaseUrl := c.Request.FormValue("base_url")
-	if rawBaseUrl == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Base URL may not be empty"),
-		)
-		return
-	}
-
-	var err error
-	err = util.IsValidUrl(rawBaseUrl)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Invalid base URL").
-			AddErr(errors.LvlWordy, err),
-		)
-		return
-	}
-
-	newBaseUrl, err := types.NewUrl(rawBaseUrl)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Invalid base URL").
-			AddErr(errors.LvlWordy, err),
-		)
-		return
+	client := &types.OauthClient{
+		Id:           clientId,
+		Name:         body.Name,
+		ClientId:     body.ClientId,
+		ClientSecret: body.ClientSecret,
+		BaseUrl:      body.BaseUrl,
+		Scope:        body.Scope,
 	}
 
 	// Check if the client is valid
-	client := &types.OauthClient{
-		Id:           clientId,
-		Name:         newClientName,
-		ClientId:     newClientId,
-		ClientSecret: newClientSecret,
-		BaseUrl:      newBaseUrl,
-		Scope:        c.Request.FormValue("scope"),
-	}
-
 	tr = auth.FetchOauthUrls(client, u.Context)
 	if tr != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Invalid base URL").
-			AddErr(errors.LvlWordy, err),
+		u.Error(tr.
+			Append(errors.LvlWordy, "Could not determine OIDC URLs"),
 		)
+		return
 	}
 
 	// Update
@@ -313,22 +218,15 @@ func CreateOauthAuthorizationRequest(c *gin.Context) {
 	})
 }
 
-func FinalizeOauthAuthorizationRequest(c *gin.Context) {
+func FinalizeOauthAuthorizationRequest(c *gin.Context, body *struct {
+	AuthCode string `json:"authorization_code" form:"authorization_code" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
 	// Request ID
 	requestId, tr := util.GetId(c, "request")
 	if tr != nil {
 		u.Error(tr)
-		return
-	}
-
-	// Authorization code
-	authCode := c.Request.FormValue("authorization_code")
-	if authCode == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlWordy, "Missing authorization coder"),
-		)
 		return
 	}
 
@@ -362,7 +260,7 @@ func FinalizeOauthAuthorizationRequest(c *gin.Context) {
 		return
 	}
 
-	tokens, tr := auth.FetchOauthTokensUsingAuthorizationCode(client, authCode, u.Context, u.Config)
+	tokens, tr := auth.FetchOauthTokensUsingAuthorizationCode(client, body.AuthCode, u.Context, u.Config)
 	if tr != nil {
 		u.Error(tr)
 		return

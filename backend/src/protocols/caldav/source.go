@@ -23,7 +23,7 @@ type CaldavSource struct {
 }
 
 type CaldavSourceSettings struct {
-	Url *types.Url `json:"url"`
+	Url *types.Url `json:"url" form:"source_url" binding:"required"`
 }
 
 func (settings *CaldavSourceSettings) GetBytes() []byte {

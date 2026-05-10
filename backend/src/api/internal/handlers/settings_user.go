@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
 	"luna-backend/api/internal/util"
 	"luna-backend/config"
-	"luna-backend/constants"
 	"luna-backend/errors"
 	"net/http"
 
@@ -44,23 +44,12 @@ func GetUserSetting(c *gin.Context) {
 	u.Success(&gin.H{"value": setting})
 }
 
-func PatchUserSettings(c *gin.Context) {
+func PatchUserSettings(c *gin.Context, body *map[string]json.RawMessage) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
 
-	err := c.Request.ParseMultipartForm(constants.MaxFormBytes)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlWordy, "Could not parse form data").
-			AltStr(errors.LvlPlain, "Malformed form data"))
-		return
-	}
-
-	pairs := c.Request.PostForm
-
-	if len(pairs) == 0 {
+	if len(*body) == 0 {
 		u.Error(errors.New().Status(http.StatusBadRequest).
 			Append(errors.LvlPlain, "Nothing to change"))
 		return
@@ -69,12 +58,12 @@ func PatchUserSettings(c *gin.Context) {
 	// We buffer all the settings into an array first, because it's faster to
 	// parse than call the database. If one value is malformed, we save a lot of
 	// time not running any queries.
-	entries := make([]config.SettingsEntry, len(pairs))
+	entries := make([]config.SettingsEntry, len(*body))
 
 	var tr *errors.ErrorTrace
 	i := 0
-	for key, value := range pairs {
-		entries[i], tr = config.ParseUserSetting(key, []byte(value[0]))
+	for key, value := range *body {
+		entries[i], tr = config.ParseUserSetting(key, value)
 		i++
 		if tr != nil {
 			u.Error(tr)
@@ -82,7 +71,7 @@ func PatchUserSettings(c *gin.Context) {
 		}
 	}
 
-	// TODO: can we do this in bulk rather than individually for each key?
+	//// TODO: can we do this in bulk rather than individually for each key?
 	for _, setting := range entries {
 		tr = u.Tx.Queries().UpdateUserSetting(userId, setting)
 		if tr != nil {

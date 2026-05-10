@@ -9,6 +9,7 @@ import (
 	"luna-backend/errors"
 	"luna-backend/files"
 	"luna-backend/types"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/emersion/go-ical"
@@ -22,12 +23,13 @@ type IcalSource struct {
 }
 
 type IcalSourceSettings struct {
-	Location     string         `json:"location"`
-	Url          *types.Url     `json:"url"`  // for Location == "remote"
-	Path         *types.Path    `json:"path"` // for Location == "local"
-	FileId       types.ID       `json:"file"` // for Location == "database"
-	file         types.File     `json:"-"`
-	icalCalendar *ical.Calendar `json:"-"`
+	Location     string                `json:"location" form:"source_location" binding:"required"`
+	Url          *types.Url            `json:"url,omitempty" form:"source_url" binding:"required_if=location remote"` // for Location == "remote"
+	Path         *types.Path           `json:"path,omitempty" form:"source_path" binding:"required_if=location path"` // for Location == "local"
+	File         *multipart.FileHeader `json:"-" form:"source_file" binding:"required_if=location database"`          // for Location == "database"
+	FileId       types.ID              `json:"file,omitempty"`
+	file         types.File            `json:"-"`
+	icalCalendar *ical.Calendar        `json:"-"`
 }
 
 func (source *IcalSource) getIcalFile(q types.DatabaseQueries) (*ical.Calendar, *errors.ErrorTrace) {

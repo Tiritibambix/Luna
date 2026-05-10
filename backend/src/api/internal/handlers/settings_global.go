@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"luna-backend/api/internal/util"
 	"luna-backend/config"
 	"luna-backend/constants"
@@ -44,21 +45,10 @@ func GetGlobalSetting(c *gin.Context) {
 	u.Success(&gin.H{"value": value})
 }
 
-func PatchGlobalSettings(c *gin.Context) {
+func PatchGlobalSettings(c *gin.Context, body *map[string]json.RawMessage) {
 	u := util.GetUtil(c)
 
-	err := c.Request.ParseMultipartForm(constants.MaxFormBytes)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlWordy, "Could not parse form data").
-			AltStr(errors.LvlPlain, "Malformed form data"))
-		return
-	}
-
-	pairs := c.Request.PostForm
-
-	if len(pairs) == 0 {
+	if len(*body) == 0 {
 		u.Error(errors.New().Status(http.StatusBadRequest).
 			AltStr(errors.LvlPlain, "Nothing to change"))
 		return
@@ -70,14 +60,14 @@ func PatchGlobalSettings(c *gin.Context) {
 	//
 	// Also, we take note of some settings that changed which might require
 	// special treatment.
-	entries := make([]config.SettingsEntry, len(pairs))
+	entries := make([]config.SettingsEntry, len(*body))
 
 	gravatarPfpEnabled := u.Config.Settings.EnableGravatar.Enabled
 
 	var tr *errors.ErrorTrace
 	i := 0
-	for key, value := range pairs {
-		value, tr := config.ParseGlobalSetting(key, []byte(value[0]))
+	for key, value := range *body {
+		value, tr := config.ParseGlobalSetting(key, value)
 		entries[i] = value
 		i++
 		if tr != nil {

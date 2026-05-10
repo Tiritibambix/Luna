@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"luna-backend/api/internal/util"
 	"luna-backend/auth"
 	"luna-backend/crypto"
@@ -79,19 +78,15 @@ func GetSessionPermissions(c *gin.Context) {
 	})
 }
 
-func PutSession(c *gin.Context) {
+func PutSession(c *gin.Context, body *struct {
+	Password    string   `json:"password" form:"password" binding:"required"`
+	Name        string   `json:"name" form:"name" binding:"required"`
+	Permissions []string `json:"permissions" form:"permissions"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
 
-	// Parse the supplied password
-	password := c.PostForm("password")
-	if password == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Missing password"),
-		)
-		return
-	}
 	// Get the user's password
 	savedPassword, tr := u.Tx.Queries().GetPassword(userId)
 	if tr != nil {
@@ -103,30 +98,10 @@ func PutSession(c *gin.Context) {
 	}
 
 	// Verify the password
-	if !auth.VerifyPassword(password, savedPassword, u.Config) {
+	if !auth.VerifyPassword(body.Password, savedPassword, u.Config) {
 		u.Error(errors.New().Status(http.StatusUnauthorized).
 			Append(errors.LvlDebug, "Wrong password").
 			Append(errors.LvlPlain, "Invalid credentials"),
-		)
-		return
-	}
-
-	// Create the API session
-	apiTokenName := c.Request.FormValue("name")
-	if apiTokenName == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Name may not be empty"),
-		)
-		return
-	}
-
-	requestedPerms := c.Request.FormValue("permissions")
-	var parsedPerms []string
-	// Parse list of permissions []:
-	err := json.Unmarshal([]byte(requestedPerms), &parsedPerms)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Missing or malformed permissions list"),
 		)
 		return
 	}
@@ -142,13 +117,13 @@ func PutSession(c *gin.Context) {
 
 	session := &types.Session{
 		UserId:           userId,
-		UserAgent:        apiTokenName,
+		UserAgent:        body.Name,
 		InitialIpAddress: util.DetermineClientAddress(c),
 		LastIpAddress:    util.DetermineClientAddress(c),
 		IsShortLived:     false,
 		IsApi:            true,
 		SecretHash:       []byte{},
-		Permissions:      types.TokenPermsFromStringList(parsedPerms),
+		Permissions:      types.TokenPermsFromStringList(body.Permissions),
 	}
 	tr = u.Tx.Queries().InsertSession(session)
 	if tr != nil {
@@ -196,19 +171,15 @@ func PutSession(c *gin.Context) {
 	})
 }
 
-func PatchSession(c *gin.Context) {
+func PatchSession(c *gin.Context, body *struct {
+	Password    string    `json:"password" form:"password" binding:"required"`
+	Name        *string   `json:"name" form:"name"`
+	Permissions *[]string `json:"permissions" form:"permissions"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
 
-	// Parse the supplied password
-	password := c.PostForm("password")
-	if password == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Missing password"),
-		)
-		return
-	}
 	// Get the user's password
 	savedPassword, tr := u.Tx.Queries().GetPassword(userId)
 	if tr != nil {
@@ -220,7 +191,7 @@ func PatchSession(c *gin.Context) {
 	}
 
 	// Verify the password
-	if !auth.VerifyPassword(password, savedPassword, u.Config) {
+	if !auth.VerifyPassword(body.Password, savedPassword, u.Config) {
 		u.Error(errors.New().Status(http.StatusUnauthorized).
 			Append(errors.LvlDebug, "Wrong password").
 			Append(errors.LvlPlain, "Invalid credentials"),
@@ -254,16 +225,9 @@ func PatchSession(c *gin.Context) {
 		return
 	}
 
-	apiTokenName := c.Request.FormValue("name")
-	if apiTokenName == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Name may not be empty"),
-		)
-		return
-	}
+	if body.Name != nil && len(*body.Name) != 0 {
+		session.UserAgent = *body.Name
 
-	differentName := apiTokenName != session.UserAgent
-	if differentName {
 		tr = u.Tx.Queries().UpdateSession(session)
 		if tr != nil {
 			u.Error(tr)
@@ -271,41 +235,14 @@ func PatchSession(c *gin.Context) {
 		}
 	}
 
-	session.UserAgent = apiTokenName
+	if body.Permissions != nil {
+		session.Permissions = types.TokenPermsFromStringList(*body.Permissions)
 
-	requestedPerms := c.Request.FormValue("permissions")
-	var parsedPerms []string
-	// Parse list of permissions []:
-	err := json.Unmarshal([]byte(requestedPerms), &parsedPerms)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Missing or malformed permissions list"),
-		)
-		return
-	}
-	session.Permissions = types.TokenPermsFromStringList(parsedPerms)
-
-	currentPermissions, tr := u.Tx.Queries().GetTokenPermissions(session.SessionId)
-	if tr != nil {
-		u.Error(tr)
-		return
-	}
-
-	differentPermissions := !session.Permissions.Equals(currentPermissions)
-
-	if differentPermissions {
 		tr = u.Tx.Queries().UpdateTokenPermissions(session.SessionId, session.Permissions)
 		if tr != nil {
 			u.Error(tr)
 			return
 		}
-	}
-
-	if !differentName && !differentPermissions {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Nothing to change"),
-		)
-		return
 	}
 
 	u.Success(nil)

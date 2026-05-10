@@ -5,10 +5,8 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strconv"
 
 	"luna-backend/api/internal/util"
-	"luna-backend/auth"
 	"luna-backend/constants"
 	"luna-backend/errors"
 	"luna-backend/files"
@@ -31,7 +29,7 @@ type exposedDetailedSource struct {
 	Id              types.ID `json:"id"`
 	Name            string   `json:"name"`
 	Type            string   `json:"type"`
-	Settings        any      `json:"settings"`
+	Settings        any      `json:"settings,omitempty"`
 	AuthType        string   `json:"auth_type"`
 	Auth            any      `json:"auth"`
 	CanAddCalendars bool     `json:"can_add_calendars"`
@@ -103,123 +101,29 @@ func GetSource(c *gin.Context) {
 	u.Success(&gin.H{"source": exposedSource})
 }
 
-func parseAuthMethod(c *gin.Context) (types.AuthMethod, *errors.ErrorTrace) {
-	var sourceAuth types.AuthMethod
-
-	authType := c.PostForm("auth_type")
-	switch authType {
-	case constants.AuthNone:
-		sourceAuth = auth.NewNoAuth()
-	case constants.AuthBasic:
-		username := c.PostForm("auth_username")
-		password := c.PostForm("auth_password")
-		if username == "" || password == "" {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				Append(errors.LvlPlain, "Missing username or password")
-		}
-
-		sourceAuth = auth.NewBasicAuth(username, password)
-	case constants.AuthBearer:
-		token := c.PostForm("auth_token")
-		if token == "" {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				Append(errors.LvlPlain, "Missing token")
-		}
-
-		sourceAuth = auth.NewBearerAuth(token)
-	case constants.AuthOauth:
-		rawClientId := c.PostForm("auth_client")
-		if rawClientId == "" {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				Append(errors.LvlPlain, "Missing OAuth 2.0 client ID")
-		}
-
-		clientId, err := types.IdFromString(rawClientId)
-		if err != nil {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				AddErr(errors.LvlDebug, err).
-				Append(errors.LvlPlain, "Improperly formatted OAuth 2.0 client ID")
-		}
-
-		rawTokensId := c.PostForm("auth_tokens")
-		if rawTokensId == "" {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				Append(errors.LvlPlain, "Missing OAuth 2.0 tokens ID")
-		}
-
-		tokensId, err := types.IdFromString(rawTokensId)
-		if err != nil {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				AddErr(errors.LvlDebug, err).
-				Append(errors.LvlPlain, "Improperly formatted OAuth 2.0 tokens ID")
-		}
-
-		sourceAuth = auth.NewOauthAuth(tokensId, clientId, util.GetUserId(c))
-
-		u := util.GetUtil(c)
-		sourceAuth.(*auth.OauthAuth).SupplyContext(u.Context)
-	case "":
-		return nil, errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Missing authentication type")
-	default:
-		return nil, errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Unknown authentication type: %v", authType)
-	}
-
-	return sourceAuth, nil
-}
-
-func parseSource(c *gin.Context, sourceName string, sourceAuth types.AuthMethod, user types.ID, q types.DatabaseQueries, ctx context.Context) (types.Source, *errors.ErrorTrace) {
+func parseSource(c *gin.Context, sourceType string, sourceName string, sourceAuth types.AuthMethod, sourceSettings types.SourceSettings, user types.ID, q types.DatabaseQueries, ctx context.Context) (types.Source, *errors.ErrorTrace) {
 	var tr *errors.ErrorTrace
 	var source types.Source
 
-	sourceType := c.PostForm("type")
 	switch sourceType {
 	case constants.SourceCaldav:
-		rawUrl := c.PostForm("url")
-		if rawUrl == "" {
+		caldavSettings := sourceSettings.(*caldav.CaldavSourceSettings)
+		if caldavSettings.Url == nil {
 			return nil, errors.New().Status(http.StatusBadRequest).
 				Append(errors.LvlPlain, "Missing CalDAV url")
 		}
-		if util.IsValidUrl(rawUrl) != nil {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				Append(errors.LvlPlain, "Invalid CalDAV url")
-		}
-		sourceUrl, err := types.NewUrl(rawUrl)
-		if err != nil {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				AddErr(errors.LvlDebug, err).
-				Append(errors.LvlPlain, "Invalid CalDAV url")
-		}
-
-		source = caldav.NewCaldavSource(sourceName, sourceUrl, sourceAuth)
+		source = caldav.NewCaldavSource(sourceName, caldavSettings.Url, sourceAuth)
 		source.SupplyContext(ctx)
 
 	case constants.SourceIcal:
-		locationType := c.PostForm("location")
-		if locationType == "" {
-			return nil, errors.New().Status(http.StatusBadRequest).
-				Append(errors.LvlPlain, "Missing iCal location")
-		}
-
-		switch locationType {
+		icalSettings := sourceSettings.(*ical.IcalSourceSettings)
+		switch icalSettings.Location {
 		case "remote":
-			rawUrl := c.PostForm("url")
-			if rawUrl == "" {
+			if icalSettings.Url == nil {
 				return nil, errors.New().Status(http.StatusBadRequest).
-					Append(errors.LvlPlain, "Missing iCal url")
+					Append(errors.LvlPlain, "Missing iCal URL")
 			}
-			if util.IsValidUrl(rawUrl) != nil {
-				return nil, errors.New().Status(http.StatusBadRequest).
-					Append(errors.LvlPlain, "Invalid iCal url")
-			}
-			sourceUrl, err := types.NewUrl(rawUrl)
-			if err != nil {
-				return nil, errors.New().Status(http.StatusBadRequest).
-					AddErr(errors.LvlDebug, err).
-					Append(errors.LvlPlain, "Invalid iCal url")
-			}
-			source, tr = ical.NewRemoteIcalSource(sourceName, sourceUrl, sourceAuth, user, q)
+			source, tr = ical.NewRemoteIcalSource(sourceName, icalSettings.Url, sourceAuth, user, q)
 			if tr != nil {
 				return nil, tr
 			}
@@ -228,36 +132,23 @@ func parseSource(c *gin.Context, sourceName string, sourceAuth types.AuthMethod,
 				return nil, errors.New().Status(http.StatusBadRequest).
 					Append(errors.LvlPlain, "Local iCal sources do not support authentication")
 			}
-			rawPath := c.PostForm("path")
-			if rawPath == "" {
+			if icalSettings.Path == nil {
 				return nil, errors.New().Status(http.StatusBadRequest).
-					Append(errors.LvlPlain, "Missing iCal path")
+					Append(errors.LvlPlain, "Missing iCal Path")
 			}
-			sourcePath, err := types.NewPath(rawPath)
-			if err != nil {
-				return nil, errors.New().Status(http.StatusBadRequest).
-					AddErr(errors.LvlDebug, err).
-					Append(errors.LvlPlain, "Invalid iCal path")
-			}
-			source = ical.NewLocalIcalSource(sourceName, sourcePath)
+			source = ical.NewLocalIcalSource(sourceName, icalSettings.Path)
 		case "database":
 			if sourceAuth.GetType() != constants.AuthNone {
 				return nil, errors.New().Status(http.StatusBadRequest).
 					Append(errors.LvlPlain, "Database iCal sources do not support authentication")
 			}
 
-			fileHeader, err := c.FormFile("file")
-			if err != nil || fileHeader == nil {
+			if icalSettings.File == nil {
 				return nil, errors.New().Status(http.StatusBadRequest).
-					AddErr(errors.LvlDebug, err).
-					Append(errors.LvlPlain, "Missing or corrupted iCal file")
-			}
-			if fileHeader.Size > 50*1000*1000 {
-				return nil, errors.New().Status(http.StatusInsufficientStorage).
-					Append(errors.LvlPlain, "iCal file too large")
+					Append(errors.LvlPlain, "Missing iCal file")
 			}
 
-			file, err := fileHeader.Open()
+			file, err := icalSettings.File.Open()
 			if err != nil {
 				return nil, errors.New().Status(http.StatusInternalServerError).
 					AddErr(errors.LvlDebug, err).
@@ -273,14 +164,19 @@ func parseSource(c *gin.Context, sourceName string, sourceAuth types.AuthMethod,
 			}
 
 			var tr *errors.ErrorTrace
-			source, tr = ical.NewDatabaseIcalSource(sourceName, fileHeader.Filename, &contentToSave, user, q)
+			source, tr = ical.NewDatabaseIcalSource(sourceName, icalSettings.File.Filename, &contentToSave, user, q)
 			if tr != nil {
 				return nil, tr
 			}
+		case "":
+			return nil, errors.New().Status(http.StatusBadRequest).
+				Append(errors.LvlPlain, "Missing iCal location")
+		default:
+			return nil, errors.New().Status(http.StatusBadRequest).
+				Append(errors.LvlPlain, "Unknown iCal location: %v", icalSettings.Location)
 		}
 
 	case constants.SourceGoogle:
-		// TODO: do we need anything more or is that it?
 		source = google.NewGoogleSource(sourceName, sourceAuth)
 
 	case "":
@@ -294,101 +190,97 @@ func parseSource(c *gin.Context, sourceName string, sourceAuth types.AuthMethod,
 	return source, nil
 }
 
-func PutSource(c *gin.Context) {
+func PutSource(c *gin.Context, body *struct {
+	Name     string `json:"name" form:"name" binding:"required"`
+	Type     string `json:"type" form:"type" binding:"required"`
+	AuthType string `json:"auth_type" form:"auth_type" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
 
-	sourceName := c.PostForm("name")
-	if sourceName == "" {
+	if body.Name == "" {
 		u.Error(errors.New().Status(http.StatusBadRequest).
 			Append(errors.LvlPlain, "Missing name"))
 		return
 	}
 
-	sourceAuth, err := parseAuthMethod(c)
-	if err != nil {
-		u.Error(err)
+	sourceAuth, tr := util.ParseAuth(c, body.AuthType, userId)
+	if tr != nil {
+		u.Error(tr)
 		return
 	}
 
-	source, err := parseSource(c, sourceName, sourceAuth, userId, u.Tx.Queries(), u.Context)
-	if err != nil {
-		u.Error(err)
+	sourceSettings, tr := util.ParseSourceSettings(c, body.Type)
+	if tr != nil {
+		u.Error(tr)
 		return
 	}
 
-	id, err := u.Tx.Queries().InsertSource(userId, source)
-	if err != nil {
-		u.Error(err)
+	source, tr := parseSource(c, body.Type, body.Name, sourceAuth, sourceSettings, userId, u.Tx.Queries(), u.Context)
+	if tr != nil {
+		u.Error(tr)
+		return
+	}
+
+	id, tr := u.Tx.Queries().InsertSource(userId, source)
+	if tr != nil {
+		u.Error(tr)
 		return
 	}
 
 	u.Success(&gin.H{"id": id.String()})
 }
 
-func PatchSource(c *gin.Context) {
+func PatchSource(c *gin.Context, body *struct {
+	Name     *string `json:"name" form:"name"`
+	Type     *string `json:"type" form:"type"`
+	AuthType *string `json:"auth_type" form:"auth_type"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
 
-	sourceId, err := util.GetId(c, "source")
-	if err != nil {
-		u.Error(err)
+	sourceId, tr := util.GetId(c, "source")
+	if tr != nil {
+		u.Error(tr)
 		return
 	}
 
-	newName := c.PostForm("name")
-	newType := c.PostForm("type")
-	newAuthType := c.PostForm("auth_type")
-
-	if newName == "" && newType == "" && newAuthType == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Nothing to change"))
-		return
-	}
-
-	source, err := u.Tx.Queries().GetSource(userId, sourceId, u.Context, u.Config)
-	if err != nil {
-		u.Error(err)
+	source, tr := u.Tx.Queries().GetSource(userId, sourceId, u.Context, u.Config)
+	if tr != nil {
+		u.Error(tr)
 		return
 	}
 
 	var newAuth types.AuthMethod = nil
-	if newAuthType != "" {
-		newAuth, err = parseAuthMethod(c)
-		if err != nil {
-			u.Error(err)
+	if body.AuthType != nil {
+		newAuth, tr = util.ParseAuth(c, *body.AuthType, userId)
+		if tr != nil {
+			u.Error(tr)
 			return
 		}
 	}
 
 	var newSourceSettings types.SourceSettings = nil
-	if newType != "" {
-		if newAuth == nil {
-			newAuth = source.GetAuth()
-		}
-		newSource, err := parseSource(c, newName, newAuth, userId, u.Tx.Queries(), u.Context)
-		if err != nil {
-			u.Error(err)
+	if body.Type != nil {
+		newSourceSettings, tr = util.ParseSourceSettings(c, *body.Type)
+		if tr != nil {
+			u.Error(tr)
 			return
 		}
-		newSourceSettings = newSource.GetSettings()
-	}
-	if source.GetType() == constants.SourceIcal {
-		if newType == constants.SourceIcal {
-			err = source.Cleanup(u.Tx.Queries())
-		}
-		if err != nil {
-			u.Error(err.
+
+		tr = source.Cleanup(u.Tx.Queries())
+		if tr != nil {
+			u.Error(tr.
 				Append(errors.LvlWordy, "Could not clean up source before editing"))
 			return
 		}
 	}
 
-	err = u.Tx.Queries().UpdateSource(userId, sourceId, newName, newAuth, newType, newSourceSettings)
-	if err != nil {
-		u.Error(err)
+	tr = u.Tx.Queries().UpdateSource(userId, sourceId, body.Name, newAuth, body.Type, newSourceSettings)
+	if tr != nil {
+		u.Error(tr)
 		return
 	}
 
@@ -431,7 +323,9 @@ func DeleteSource(c *gin.Context) {
 	}
 }
 
-func ChangeSourceDisplayOrder(c *gin.Context) {
+func ChangeSourceDisplayOrder(c *gin.Context, body *struct {
+	Index uint16 `json:"index" form:"index" binding:"required"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
@@ -442,22 +336,7 @@ func ChangeSourceDisplayOrder(c *gin.Context) {
 		return
 	}
 
-	newIndexStr := c.PostForm("index")
-	if newIndexStr == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "No index supplied"))
-		return
-	}
-
-	newIndex, err := strconv.ParseUint(newIndexStr, 10, 16)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Malformed index"))
-		return
-	}
-
-	tr = u.Tx.Queries().UpdateSourceDisplayOrder(userId, sourceId, uint16(newIndex))
+	tr = u.Tx.Queries().UpdateSourceDisplayOrder(userId, sourceId, body.Index)
 	if tr != nil {
 		u.Error(tr)
 		return

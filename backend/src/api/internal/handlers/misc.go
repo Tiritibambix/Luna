@@ -38,39 +38,26 @@ func GetHealth(c *gin.Context) {
 }
 
 // Determine if a link points at an iCal or CalDAV source
-func CheckUrl(c *gin.Context) {
+func CheckUrl(c *gin.Context, body *struct {
+	Url      *types.Url `json:"url" form:"url"`
+	AuthType string     `json:"auth_type" form:"auth_type"`
+}) {
 	u := util.GetUtil(c)
 
-	// Pares URL aund authMethod parameters
-	authMethod, tr := parseAuthMethod(c)
+	// Parse auth method
+	authMethod, tr := util.ParseAuth(c, body.AuthType, util.GetUserId(c))
 	if tr != nil {
 		u.Error(tr)
 		return
 	}
-	rawUrl := c.PostForm("url")
-	if rawUrl == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Missing url"))
-		return
-	}
-	if util.IsValidUrl(rawUrl) != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Invalid url"))
-		return
-	}
-	url, err := types.NewUrl(rawUrl)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Invalid url"))
-	}
 
-	authResponse, authTr := checkUrlWithAuth(u, url, authMethod)
+	// Check responses
+	authResponse, authTr := checkUrlWithAuth(u, body.Url, authMethod)
 	var noAuthResponse *gin.H
 	var noAuthTr *errors.ErrorTrace
 
 	if authMethod.GetType() != constants.AuthNone {
-		noAuthResponse, noAuthTr = checkUrlWithAuth(u, url, auth.NewNoAuth())
+		noAuthResponse, noAuthTr = checkUrlWithAuth(u, body.Url, auth.NewNoAuth())
 	} else {
 		noAuthResponse, noAuthTr = authResponse, authTr
 	}

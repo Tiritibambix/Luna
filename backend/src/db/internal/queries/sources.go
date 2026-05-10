@@ -220,7 +220,7 @@ func (q *Queries) InsertSource(userId types.ID, source types.Source) (types.ID, 
 	return types.IdFromUuid(id), nil
 }
 
-func (q *Queries) UpdateSource(userId types.ID, sourceId types.ID, newName string, newAuth types.AuthMethod, newSourceType string, newSourceSettings types.SourceSettings) *errors.ErrorTrace {
+func (q *Queries) UpdateSource(userId types.ID, sourceId types.ID, newName *string, newAuth types.AuthMethod, newSourceType *string, newSourceSettings types.SourceSettings) *errors.ErrorTrace {
 	encryptionKey, tr := util.GetUserEncryptionKey(q.CommonConfig, userId)
 	if tr != nil {
 		return tr.
@@ -232,13 +232,13 @@ func (q *Queries) UpdateSource(userId types.ID, sourceId types.ID, newName strin
 	changes := []string{}
 	args := []any{}
 
-	if newName != "" {
+	if newName != nil {
 		changes = append(changes, fmt.Sprintf("name = $%d", len(changes)+1))
-		args = append(args, newName)
+		args = append(args, *newName)
 	}
-	if newSourceType != "" && newSourceSettings != nil {
+	if newSourceType != nil && newSourceSettings != nil {
 		changes = append(changes, fmt.Sprintf("type = $%d", len(changes)+1), fmt.Sprintf("settings = $%d", len(changes)+2))
-		args = append(args, newSourceType, newSourceSettings)
+		args = append(args, *newSourceType, newSourceSettings)
 	}
 	if newAuth != nil {
 		changes = append(

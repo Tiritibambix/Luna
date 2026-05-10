@@ -171,7 +171,15 @@ func GetEvent(c *gin.Context) {
 	u.Success(&gin.H{"event": convertedCal})
 }
 
-func PutEvent(c *gin.Context) {
+func PutEvent(c *gin.Context, body *struct {
+	Name     string         `json:"name" form:"name" binding:"required,alphanumunicode"`
+	Desc     string         `json:"desc" form:"desc" binding:"alphanumunicode"`
+	Color    types.Color    `json:"color" form:"color" binding:"required"`
+	AllDay   bool           `json:"date.all_day" form:"date_all_day"`
+	Start    time.Time      `json:"date.start" form:"date_start" binding:"required"`
+	End      *time.Time     `json:"date.end" form:"date_end"`
+	Duration *time.Duration `json:"date.duration" form:"date_duration"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
@@ -190,57 +198,22 @@ func PutEvent(c *gin.Context) {
 		return
 	}
 
-	eventName := c.PostForm("name")
-	if eventName == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Missing name"))
-		return
-	}
-
-	eventDesc := c.PostForm("desc")
-
-	eventColor, err := types.ParseColor(c.PostForm("color"))
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlPlain, "Missing or malformed color"))
-		return
-	}
-
-	eventDateAllDay := c.PostForm("date_all_day") == "true"
-
-	eventDateStartStr := c.PostForm("date_start")
-	eventDateStart, err := time.Parse(time.RFC3339, eventDateStartStr)
-	if err != nil {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, err).
-			Append(errors.LvlWordy, "Missing or malformed start time"))
-		return
-	}
-
-	eventDateEndStr := c.PostForm("date_end")
-	eventDateDurationStr := c.PostForm("date_duration")
-
-	eventDateEnd, endErr := time.Parse(time.RFC3339, eventDateEndStr)
-	eventDateDuration, durationErr := time.ParseDuration(eventDateDurationStr)
-
 	var date *types.EventDate
-	if (endErr != nil && durationErr != nil) || (endErr == nil && durationErr == nil) {
+	if body.End == nil && body.Duration == nil {
 		u.Error(errors.New().Status(http.StatusBadRequest).
-			AddErr(errors.LvlDebug, endErr).AndErr(durationErr).
-			Append(errors.LvlPlain, "Missing or malformed date end or duration"))
+			Append(errors.LvlPlain, "Must specify end time or duration"))
 		return
-	} else if endErr == nil && durationErr == nil {
+	} else if body.End != nil && body.Duration != nil {
 		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Cannot specify both end and duration"))
+			Append(errors.LvlPlain, "Cannot specify both end time and duration"))
 		return
-	} else if endErr == nil {
-		date = types.NewEventDateFromEndTime(&eventDateStart, &eventDateEnd, eventDateAllDay, nil)
+	} else if body.End != nil {
+		date = types.NewEventDateFromEndTime(&body.Start, body.End, body.AllDay, nil)
 	} else {
-		date = types.NewEventDateFromDuration(&eventDateStart, &eventDateDuration, eventDateAllDay, nil)
+		date = types.NewEventDateFromDuration(&body.Start, body.Duration, body.AllDay, nil)
 	}
 
-	event, tr := calendar.AddEvent(eventName, eventDesc, eventColor, date, u.Tx.Queries())
+	event, tr := calendar.AddEvent(body.Name, body.Desc, &body.Color, date, u.Tx.Queries())
 	if tr != nil {
 		u.Error(tr)
 		return
@@ -255,7 +228,19 @@ func PutEvent(c *gin.Context) {
 	u.Success(&gin.H{"id": event.GetId().String()})
 }
 
-func PatchEvent(c *gin.Context) {
+func PatchEvent(c *gin.Context, body *struct {
+	Name       *string        `json:"name" form:"name" binding:"alphanumunicode"`
+	Desc       *string        `json:"desc" form:"desc" binding:"alphanumunicode"`
+	Color      *types.Color   `json:"color" form:"color"`
+	AllDay     *bool          `json:"date.all_day" form:"date_all_day"`
+	Start      *time.Time     `json:"date.start" form:"date_start"`
+	End        *time.Time     `json:"date.end" form:"date_end"`
+	Duration   *time.Duration `json:"date.duration" form:"date_duration"`
+	Overridden bool           `json:"overridden" form:"overridden"`
+	Rrule      *string        `json:"date.rrule" form:"date_rrule"`
+	Rdate      *string        `json:"date.rdate" form:"date_rdate"`
+	Exdate     *string        `json:"date.exdate" form:"date_exdate"`
+}) {
 	u := util.GetUtil(c)
 
 	userId := util.GetUserId(c)
@@ -272,79 +257,54 @@ func PatchEvent(c *gin.Context) {
 		return
 	}
 
-	newEventName := c.PostForm("name")
-
-	newEventDesc := c.PostForm("desc")
-
-	isOverridden := c.PostForm("overridden") == "true"
-
-	var newEventColor *types.Color
-	var colErr error
-	newEventColor, colErr = types.ParseColor(c.PostForm("color"))
-
-	eventDateAllDay := c.PostForm("date_all_day") == "true"
-
-	eventDateStartStr := c.PostForm("date_start")
-	eventDateStart, startErr := time.Parse(time.RFC3339, eventDateStartStr)
-
-	eventDateEndStr := c.PostForm("date_end")
-	eventDateDurationStr := c.PostForm("date_duration")
-
-	eventDateEnd, endErr := time.Parse(time.RFC3339, eventDateEndStr)
-	eventDateDuration, durationErr := time.ParseDuration(eventDateDurationStr)
-
-	eventDateRrule := c.PostForm("date_rrule")
-	eventDateRdate := c.PostForm("date_rdate")
-	eventDateExdate := c.PostForm("date_exdate")
-
-	if !isOverridden &&
-		(newEventName == "" && newEventDesc == event.GetDesc() && (newEventColor == event.GetColor() || colErr != nil) &&
-			startErr != nil &&
-			endErr != nil &&
-			durationErr != nil) &&
-		eventDateRrule == "" &&
-		eventDateRdate == "" {
-		u.Error(errors.New().Status(http.StatusBadRequest).
-			Append(errors.LvlPlain, "Nothing to change"))
-		return
+	if body.Name != nil {
+		event.SetName(*body.Name)
 	}
 
-	if newEventName == "" && !isOverridden {
-		newEventName = event.GetName()
+	if body.Desc != nil {
+		event.SetName(*body.Desc)
 	}
 
-	//if colErr != nil && !isOverridden {
-	//	newEventColor = event.GetColor()
-	//}
+	if body.Color != nil {
+		event.SetColor(body.Color)
+	}
 
 	var newEventDate *types.EventDate
-	if startErr != nil && endErr != nil && durationErr != nil {
-		newEventDate = event.GetDate()
+	if body.Start == nil {
+		body.Start = event.GetDate().Start()
+	}
+	if body.End == nil && body.Duration == nil {
+		body.End = event.GetDate().End()
+	}
+	if body.AllDay == nil {
+		oldAllDay := event.GetDate().AllDay()
+		body.AllDay = &oldAllDay
+	}
+	if body.End != nil && body.Duration != nil {
+		u.Error(errors.New().Status(http.StatusBadRequest).
+			Append(errors.LvlPlain, "Cannot specify both end time and duration"))
+		return
+	} else if body.End != nil {
+		newEventDate = types.NewEventDateFromEndTime(body.Start, body.End, *body.AllDay, nil)
 	} else {
-		if startErr != nil {
-			eventDateStart = *event.GetDate().Start()
-		}
-		if endErr != nil && durationErr == nil {
-			if event.GetDate().SpecifyDuration() {
-				eventDateDuration = *event.GetDate().Duration()
-				newEventDate = types.NewEventDateFromDuration(&eventDateStart, &eventDateDuration, eventDateAllDay, nil)
-			} else {
-				eventDateEnd = *event.GetDate().End()
-				newEventDate = types.NewEventDateFromEndTime(&eventDateStart, &eventDateEnd, eventDateAllDay, nil)
-			}
-		} else if endErr == nil && durationErr == nil {
-			u.Error(errors.New().Status(http.StatusBadRequest).
-				Append(errors.LvlPlain, "Cannot specify both end and duration"))
-			return
-		} else if endErr == nil {
-			newEventDate = types.NewEventDateFromEndTime(&eventDateStart, &eventDateEnd, eventDateAllDay, nil)
-		} else {
-			newEventDate = types.NewEventDateFromDuration(&eventDateStart, &eventDateDuration, eventDateAllDay, nil)
-		}
+		newEventDate = types.NewEventDateFromDuration(body.Start, body.Duration, *body.AllDay, nil)
 	}
 
 	// Event recurrence
-	recurrence, err := types.EventRecurrenceFromStrings(eventDateRrule, eventDateRdate, eventDateExdate)
+	newRrule := event.GetDate().Recurrence().RruleString()
+	if body.Rrule != nil {
+		newRrule = *body.Rrule
+	}
+	newRdate := event.GetDate().Recurrence().RdateString()
+	if body.Rdate != nil {
+		newRrule = *body.Rdate
+	}
+	newExdate := event.GetDate().Recurrence().ExdateString()
+	if body.Exdate != nil {
+		newRrule = *body.Exdate
+	}
+
+	recurrence, err := types.EventRecurrenceFromStrings(newRrule, newRdate, newExdate)
 	if err != nil {
 		u.Error(errors.New().Status(http.StatusBadRequest).
 			AddErr(errors.LvlDebug, err).
@@ -354,7 +314,7 @@ func PatchEvent(c *gin.Context) {
 	}
 	newEventDate.SetRecurrence(recurrence)
 
-	_, tr = event.GetCalendar().EditEvent(event, newEventName, newEventDesc, newEventColor, newEventDate, isOverridden, u.Tx.Queries())
+	_, tr = event.GetCalendar().EditEvent(event, event.GetName(), event.GetDesc(), event.GetColor(), event.GetDate(), body.Overridden, u.Tx.Queries())
 	if tr != nil {
 		u.Error(tr)
 		return

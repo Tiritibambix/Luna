@@ -2,14 +2,17 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/google/uuid"
 )
 
-type ID uuid.UUID
+type ID struct {
+	uuid uuid.UUID
+}
 
 func EmptyId() ID {
-	return ID(uuid.Nil)
+	return ID{uuid.Nil}
 }
 
 func RandomId() ID {
@@ -18,25 +21,25 @@ func RandomId() ID {
 }
 
 func UrlNamespace() ID {
-	return ID(uuid.NameSpaceURL)
+	return ID{uuid.NameSpaceURL}
 }
 
 func PathNamespace() ID {
-	return ID(uuid.NameSpaceOID) // no unique well-known namespace for paths, so we'll just use OID
+	return ID{uuid.NameSpaceOID} // no unique well-known namespace for paths, so we'll just use OID
 }
 
 func (id ID) String() string {
-	uuids := uuid.UUIDs([]uuid.UUID{uuid.UUID(id)})
+	uuids := uuid.UUIDs([]uuid.UUID{id.uuid})
 	strings := uuids.Strings()
 	return strings[0]
 }
 
 func (id ID) UUID() uuid.UUID {
-	return uuid.UUID(id)
+	return id.uuid
 }
 
 func (id ID) IsEmpty() bool {
-	return uuid.UUID(id) == uuid.Nil
+	return id.uuid == uuid.Nil
 }
 
 func (id ID) Bytes() []byte {
@@ -65,7 +68,7 @@ func IdFromString(str string) (ID, error) {
 }
 
 func IdFromUuid(uu uuid.UUID) ID {
-	return ID(uu)
+	return ID{uu}
 }
 
 func (id ID) MarshalJSON() ([]byte, error) {
@@ -85,5 +88,35 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	*id = ID
+	return nil
+}
+
+func (id *ID) Scan(src any) error {
+	var parsed ID
+	var err error
+	switch src := src.(type) {
+	case string:
+		parsed, err = IdFromString(src)
+		if err != nil {
+			return err
+		}
+	case []byte:
+		parsed, err = IdFromString(string(src))
+		if err != nil {
+			return err
+		}
+	default:
+		return errors.New("Incompatible type for Pair")
+	}
+	*id = parsed
+	return nil
+}
+
+func (id *ID) UnmarshalParam(param string) error {
+	parsed, err := IdFromString(param)
+	if err != nil {
+		return err
+	}
+	*id = parsed
 	return nil
 }

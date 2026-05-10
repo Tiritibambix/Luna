@@ -2,8 +2,13 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"net/url"
+	"regexp"
+	"strings"
 )
+
+var urlRegex = regexp.MustCompile(`https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}(\.[a-z]{2,63})?\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)`)
 
 type Url url.URL
 
@@ -63,4 +68,29 @@ func NewUrlSafe(rawUrl string) *Url {
 		panic(err)
 	}
 	return url
+}
+
+func IsValidUrl(url string) error {
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		return errors.New("url must start with \"http://\" or \"https://\"")
+	}
+	if !urlRegex.MatchString(url) {
+		return errors.New("the url contains illegal characters or is invalid")
+	}
+	return nil
+}
+
+func (url *Url) UnmarshalParam(param string) error {
+	if param == "" {
+		return errors.New("missing url")
+	}
+	if err := IsValidUrl(param); err != nil {
+		return err
+	}
+	parsed, err := NewUrl(param)
+	if err != nil {
+		return errors.New("invalid url")
+	}
+	*url = *parsed
+	return nil
 }
