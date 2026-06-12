@@ -389,14 +389,14 @@ func (calendar *CaldavCalendar) EditEvent(originalEvent types.Event, name string
 	if err != nil {
 		return nil, errors.InterpretRemoteError(errors.New().AddErr(errors.LvlDebug, err), "calendar", "CalDAV calendar").
 			Append(errors.LvlWordy, "Could not get finished event").
-			Append(errors.LvlBroad, "Could not add event")
+			Append(errors.LvlBroad, "Could not edit event")
 	}
 
 	finishedEvent, tr := calendar.eventFromCaldav(obj, q)
 	if tr != nil {
 		return nil, tr.
 			Append(errors.LvlWordy, "Could not parse finished event").
-			Append(errors.LvlBroad, "Could not add event")
+			Append(errors.LvlBroad, "Could not edit event")
 	}
 
 	return finishedEvent, nil
