@@ -60,7 +60,7 @@
 
 <Modal title="Copy to dates" bind:showModal={showModalInternal} bind:hideModal={hideModalInternal}>
   <MonthSelection bind:date={viewDate} />
-  <SmallCalendar bind:date={viewDate} onDayClick={toggleDate} isSelected={isSelected} />
+  <SmallCalendar bind:date={viewDate} onDayClick={toggleDate} isSelected={isSelected} dynamicRows={false} />
   <Horizontal position="left">
     {selectedDates.length} date{selectedDates.length === 1 ? "" : "s"} selected
   </Horizontal>

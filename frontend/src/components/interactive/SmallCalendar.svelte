@@ -7,11 +7,14 @@
   import { setContext } from "svelte";
   import { svelteFlyInHorizontal, svelteFlyOutHorizontal } from "$lib/client/animations";
 
+  const settings = getSettings();
+
   interface Props {
     date: Date;
     onDayClick?: (date: Date) => any;
     smaller?: boolean;
     isSelected?: (date: Date) => boolean;
+    dynamicRows?: boolean;
   }
 
   let {
@@ -19,9 +22,8 @@
     onDayClick = NoOp,
     smaller = false,
     isSelected = () => false,
+    dynamicRows = settings.userSettings[UserSettingKeys.DynamicSmallCalendarRows],
   }: Props = $props();
-
-  const settings = getSettings();
 
   let today = new Date();
 
@@ -31,8 +33,8 @@
     const lastMonthDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
     const firstDayOfWeek = getDayIndex(firstMonthDay);
 
-    const amountOfRows = 
-      settings.userSettings[UserSettingKeys.DynamicSmallCalendarRows] ?
+    const amountOfRows =
+      dynamicRows ?
       Math.ceil((lastMonthDay.getDate() + firstDayOfWeek) / 7)
       : 6;
 
