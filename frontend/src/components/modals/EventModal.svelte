@@ -187,7 +187,7 @@
     });
   }
 
-  let showCopyModal: () => any = $state(NoOp);
+  let showCopyModal: (initialDate: Date) => any = $state(NoOp);
 
   function buildEventCopy(original: EventModel, targetDate: Date): EventModel {
     const duration = original.date.end.getTime() - original.date.start.getTime();
@@ -287,7 +287,7 @@
       <Button color={ColorKeys.Accent} onClick={resetOverrides}>Reset</Button>
     {/if}
     {#if event != EmptyEvent && !editMode && canCopyEvent}
-      <Button color={ColorKeys.Accent} onClick={showCopyModal}>Copy to dates...</Button>
+      <Button color={ColorKeys.Accent} onClick={() => showCopyModal(event.date.start)}>Copy to dates...</Button>
     {/if}
   {/snippet}
 </EditableModal>

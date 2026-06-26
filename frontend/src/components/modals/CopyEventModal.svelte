@@ -13,7 +13,7 @@
 
   interface Props {
     onConfirm: (dates: Date[]) => Promise<void>;
-    showModal?: () => any;
+    showModal?: (initialDate: Date) => any;
     hideModal?: () => any;
   }
 
@@ -29,8 +29,8 @@
   let viewDate: Date = $state(new Date());
   let selectedDates: Date[] = $state([]);
 
-  showModal = () => {
-    viewDate = new Date();
+  showModal = (initialDate: Date) => {
+    viewDate = new Date(initialDate);
     selectedDates = [];
     showModalInternal();
   };
