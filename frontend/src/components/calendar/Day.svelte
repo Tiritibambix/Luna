@@ -121,6 +121,12 @@
     border-radius: dimensions.$borderRadiusSmall;
     background-color: colors.$backgroundSecondary;
     height: calc(100% - dimensions.$gapSmall);
+    border: 2px solid transparent;
+    box-sizing: border-box;
+  }
+
+  div.background.today {
+    border-color: colors.$backgroundAccent;
   }
 
   span.top {
@@ -228,7 +234,7 @@
   ondragleave={dragLeave}
   ondrop={dropHandler}
 >
-  <div class="background" class:otherMonth={!isCurrentMonth} class:dragOver={dragOver}>
+  <div class="background" class:otherMonth={!isCurrentMonth} class:dragOver={dragOver} class:today={isToday}>
     <span class="top">
       <span class="date" class:sunday={date.getDay() === 0} class:today={isToday}>
         {date.getDate()}
