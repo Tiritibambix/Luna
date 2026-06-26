@@ -123,7 +123,7 @@ func ParseIcalEvent(props *ical.Props) (*IcalEventProps, bool, error) {
 			return nil, false, fmt.Errorf("could not parse end time %v: %v", dtend.Value, err)
 		}
 
-		allDay := startTime.Location() == time.Local && endTime.Location() == time.Local && startTime.Hour() == 0 && startTime.Minute() == 0 && startTime.Second() == 0 && endTime.Hour() == 0 && endTime.Minute() == 0 && endTime.Second() == 0
+		allDay := !strings.Contains(dtstart.Value, "T") && !strings.Contains(dtend.Value, "T") && startTime.Hour() == 0 && startTime.Minute() == 0 && startTime.Second() == 0 && endTime.Hour() == 0 && endTime.Minute() == 0 && endTime.Second() == 0
 
 		eventDate = types.NewEventDateFromEndTime(startTime, endTime, allDay, eventRecurrence)
 	} else if duration != nil {
@@ -132,7 +132,7 @@ func ParseIcalEvent(props *ical.Props) (*IcalEventProps, bool, error) {
 			return nil, false, fmt.Errorf("could not parse duration %v: %v", duration.Value, err)
 		}
 
-		allDay := startTime.Location() == time.Local && startTime.Hour() == 0 && startTime.Minute() == 0 && startTime.Second() == 0 && dur%(24*time.Hour) == 0
+		allDay := !strings.Contains(dtstart.Value, "T") && startTime.Hour() == 0 && startTime.Minute() == 0 && startTime.Second() == 0 && dur%(24*time.Hour) == 0
 
 		eventDate = types.NewEventDateFromDuration(startTime, &dur, allDay, eventRecurrence)
 	} else {

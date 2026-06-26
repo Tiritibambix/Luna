@@ -333,7 +333,10 @@ func ParseIcalTime(icalTime *ical.Prop) (*time.Time, *time.Location, error) {
 	} else {
 		tzidParam := icalTime.Params.Get("TZID")
 		if tzidParam == "" {
-			tzid = "Local"
+			// No TZID and no "Z" suffix: RFC 5545 floating time with an unspecified zone.
+			// Falling back to "Local" would store/export the literal string "Local" as TZID,
+			// which other clients (e.g. Android/DAVx5) don't recognize as a valid IANA zone.
+			tzid = "UTC"
 		} else {
 			tzid = tzidParam
 		}

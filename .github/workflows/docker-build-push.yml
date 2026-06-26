@@ -1,0 +1,111 @@
+name: Build and Push Docker Images - Luna
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      skip: ${{ steps.compare.outputs.skip }}
+      short_commit: ${{ steps.meta.outputs.short_commit }}
+      date_tag: ${{ steps.meta.outputs.date_tag }}
+      branch: ${{ steps.meta.outputs.branch }}
+    steps:
+      - name: Extract metadata
+        id: meta
+        run: |
+          echo "short_commit=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          echo "date_tag=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+          echo "branch=${GITHUB_REF_NAME//\//-}" >> $GITHUB_OUTPUT
+
+      - name: Restore last built commit for this branch
+        uses: actions/cache/restore@v5
+        with:
+          path: last_commit.txt
+          key: last-commit-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: last-commit-${{ github.ref_name }}-
+
+      - name: Read last built commit
+        id: read
+        run: |
+          if [ -f last_commit.txt ]; then
+            echo "last_commit=$(cat last_commit.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "last_commit=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compare commits
+        id: compare
+        run: |
+          if [ "${{ github.sha }}" = "${{ steps.read.outputs.last_commit }}" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "No new commit. Skipping build."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "New commit detected or manual trigger."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Save new commit hash to cache
+        if: steps.compare.outputs.skip == 'false'
+        run: echo "${{ github.sha }}" > last_commit.txt
+
+      - name: Update cache
+        if: steps.compare.outputs.skip == 'false'
+        uses: actions/cache/save@v5
+        with:
+          path: last_commit.txt
+          key: last-commit-${{ github.ref_name }}-${{ github.run_id }}
+
+  build:
+    needs: check
+    if: needs.check.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - image: lunafork-backend
+            context: ./backend
+            dockerfile: ./backend/Dockerfile
+          - image: lunafork-frontend
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image }}:${{ needs.check.outputs.branch }}-latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image }}:${{ needs.check.outputs.branch }}-${{ needs.check.outputs.short_commit }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image }}:${{ needs.check.outputs.branch }}-${{ needs.check.outputs.date_tag }}
+          platforms: linux/amd64
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
