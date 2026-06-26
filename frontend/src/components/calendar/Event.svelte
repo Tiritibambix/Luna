@@ -97,6 +97,13 @@
       element?.blur();
     });
   }
+  function dragStart(e: DragEvent) {
+    if (event == null) return;
+
+    e.dataTransfer?.setData("text/plain", event.id);
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+    currentlyClickedEvent = null;
+  }
 </script>
 
 <style lang="scss">
@@ -207,6 +214,8 @@
     onfocusin={mouseEnter}
     onfocusout={mouseLeave}
     onkeypress={keyPress}
+    draggable={event.can_edit}
+    ondragstart={dragStart}
     role="button"
     tabindex={isFirstDisplay ? 0 : -1}
     style="

@@ -5,6 +5,7 @@
   import Event from "./Event.svelte";
   import IconButton from "../interactive/IconButton.svelte";
 
+  import { getRepository } from "$lib/client/data/repository.svelte";
   import { queueNotification } from "$lib/client/notifications";
   import { NoOp } from "$lib/client/placeholders";
   import { ColorKeys } from "../../types/colors";
@@ -33,6 +34,8 @@
     showMore = NoOp,
   }: Props = $props();
 
+  const repository = getRepository();
+
   let showCreateEventModal: ((date: Date) => Promise<EventModel>) = getContext("showNewEventModal");
   let createEventButtonClick = () => {
     showCreateEventModal(date).catch((err) => {
@@ -41,6 +44,57 @@
   };
 
   let actualMaxEvents: number = $derived(maxEvents <= events.length - 1 ? maxEvents - 1 : maxEvents);
+
+  let dragOver = $state(false);
+
+  function dragOverHandler(e: DragEvent) {
+    e.preventDefault();
+  }
+  function dragEnter(e: DragEvent) {
+    e.preventDefault();
+    dragOver = true;
+  }
+  function dragLeave() {
+    dragOver = false;
+  }
+  function dropHandler(e: DragEvent) {
+    e.preventDefault();
+    dragOver = false;
+
+    const id = e.dataTransfer?.getData("text/plain");
+    if (!id) return;
+
+    const original = repository.events.find(ev => ev.id === id);
+    if (!original) return;
+
+    const sourceMidnight = new Date(original.date.start.getFullYear(), original.date.start.getMonth(), original.date.start.getDate());
+    const targetMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const delta = Math.round((targetMidnight.getTime() - sourceMidnight.getTime()) / (1000 * 60 * 60 * 24));
+    if (delta === 0) return;
+
+    const newStart = new Date(original.date.start);
+    newStart.setDate(newStart.getDate() + delta);
+    const newEnd = new Date(original.date.end);
+    newEnd.setDate(newEnd.getDate() + delta);
+
+    const modifiedEvent: EventModel = {
+      ...original,
+      date: {
+        start: newStart,
+        end: newEnd,
+        allDay: original.date.allDay,
+        recurrence: original.date.recurrence,
+      },
+    };
+
+    repository.editEvent(
+      modifiedEvent,
+      { name: false, desc: false, color: false, date: true },
+      repository.getEventSourceType(modifiedEvent) === "ical"
+    ).catch((err) => {
+      queueNotification(ColorKeys.Danger, `Could not move event ${modifiedEvent.name}: ${err.message}`);
+    });
+  }
 </script>
 
 <style lang="scss">
@@ -158,13 +212,23 @@
     opacity: 0.5;
   }
 
+  div.background.dragOver {
+    background-color: colors.$backgroundAccent;
+  }
+
   //div.eventAnimation.hidden {
   //  display: none;
   //}
 </style>
 
-<div class="day">
-  <div class="background" class:otherMonth={!isCurrentMonth}>
+<div
+  class="day"
+  ondragover={dragOverHandler}
+  ondragenter={dragEnter}
+  ondragleave={dragLeave}
+  ondrop={dropHandler}
+>
+  <div class="background" class:otherMonth={!isCurrentMonth} class:dragOver={dragOver}>
     <span class="top">
       <span class="date" class:sunday={date.getDay() === 0} class:today={isToday}>
         {date.getDate()}

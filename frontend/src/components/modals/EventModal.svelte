@@ -33,15 +33,7 @@
   let event: EventModel = $state(EmptyEvent);
   let originalEvent: EventModel = $state(EmptyEvent);
 
-  let eventSourceType = $derived.by(() => {
-    const calendar = repository.calendars.find(x => x.id === event.calendar);
-    if (!calendar) return "unknown";
-
-    const source = repository.sources.find(x => x.id === calendar.source);
-    if (!source) return "unknown";
-
-    return source.type;
-  });
+  let eventSourceType = $derived(repository.getEventSourceType(event));
 
   let promiseResolve: (value: EventModel | PromiseLike<EventModel>) => void = $state(NoOp);
   let promiseReject: (reason?: any) => void = $state(NoOp);

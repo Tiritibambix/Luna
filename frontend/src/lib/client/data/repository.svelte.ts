@@ -889,6 +889,16 @@ export class Repository {
     this.saveCache();
   };
 
+  getEventSourceType(event: EventModel): string {
+    const calendar = this.calendars.find(x => x.id === event.calendar);
+    if (!calendar) return "unknown";
+
+    const source = this.sources.find(x => x.id === calendar.source);
+    if (!source) return "unknown";
+
+    return source.type;
+  }
+
   async editEvent(modifiedEvent: EventModel, changes: EventModelChanges, override: boolean): Promise<void> {
     if (!browser) return;
 
@@ -924,7 +934,9 @@ export class Repository {
 
     // update on display
     if (this.getMonthFromDate(modifiedEvent.date.start) <= this.eventsRangeEnd && this.getMonthFromDate(modifiedEvent.date.end) >= this.eventsRangeStart) {
-      //this.events.update((events) => events.map((event) => event.id === modifiedEvent.id ? modifiedEvent : event));
+      const index = this.events.findIndex((event) => event.id === modifiedEvent.id);
+      if (index !== -1) this.events[index] = modifiedEvent;
+      else this.events.push(modifiedEvent);
     } else {
       this.events.splice(this.events.findIndex((event) => event.id === modifiedEvent.id), 1);
     }
