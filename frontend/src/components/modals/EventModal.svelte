@@ -1,13 +1,14 @@
 <script lang="ts">
   import Button from "../interactive/Button.svelte";
   import ColorInput from "../forms/ColorInput.svelte";
+  import CopyEventModal from "./CopyEventModal.svelte";
   import DateTimeInput from "../forms/DateTimeInput.svelte";
   import EditableModal from "./EditableModal.svelte";
   import SelectInput from "../forms/SelectInput.svelte";
   import TextInput from "../forms/TextInput.svelte";
 
   import { EmptyEvent, NoChangesEvent, NoOp } from "$lib/client/placeholders";
-  import { deepCopy, deepEquality } from "$lib/common/misc";
+  import { deepCopy, deepEquality, parallel } from "$lib/common/misc";
   import { getRepository } from "$lib/client/data/repository.svelte";
   import { isSameDay } from "$lib/common/date";
   import { queueNotification } from "$lib/client/notifications";
@@ -129,6 +130,10 @@
       .map(calendar => ({ value: calendar.id, name: calendar.name }))
   );
 
+  let canCopyEvent = $derived(
+    event.id !== "" && (repository.calendars.find(calendar => calendar.id === event.calendar)?.can_add_events ?? false)
+  );
+
   const onDelete = async () => {
     await getRepository().deleteEvent(event.id).catch(err => {
       throw new Error(`Could not delete event ${event.name}: ${err.message}`);
@@ -181,6 +186,44 @@
       });
     });
   }
+
+  let showCopyModal: () => any = $state(NoOp);
+
+  function buildEventCopy(original: EventModel, targetDate: Date): EventModel {
+    const duration = original.date.end.getTime() - original.date.start.getTime();
+    const start = new Date(targetDate);
+    if (!original.date.allDay) {
+      start.setHours(original.date.start.getHours(), original.date.start.getMinutes(), original.date.start.getSeconds(), original.date.start.getMilliseconds());
+    } else {
+      start.setHours(0, 0, 0, 0);
+    }
+    return {
+      id: "",
+      calendar: original.calendar,
+      name: original.name,
+      desc: original.desc,
+      color: original.color,
+      date: {
+        start: start,
+        end: new Date(start.getTime() + duration),
+        allDay: original.date.allDay,
+        recurrence: false,
+      },
+      overridden: false,
+      can_edit: original.can_edit,
+      can_delete: original.can_delete,
+    };
+  }
+
+  const onCopyToDates = async (dates: Date[]) => {
+    const [_, errors] = await parallel(dates.map(d => getRepository().createEvent(buildEventCopy(event, d))));
+    errors.forEach(([i, err]) => {
+      queueNotification(ColorKeys.Danger, `Could not copy event to ${dates[i].toDateString()}: ${err.message}`);
+    });
+    if (errors.length < dates.length) {
+      queueNotification(ColorKeys.Success, `Copied to ${dates.length - errors.length} date${dates.length - errors.length === 1 ? "" : "s"}`);
+    }
+  };
 
   const changeEnd = (value: Date) => {
     if (value.getTime() < event.date.start.getTime()) {
@@ -243,5 +286,10 @@
     {#if event != EmptyEvent && !editMode && event.overridden}
       <Button color={ColorKeys.Accent} onClick={resetOverrides}>Reset</Button>
     {/if}
+    {#if event != EmptyEvent && !editMode && canCopyEvent}
+      <Button color={ColorKeys.Accent} onClick={showCopyModal}>Copy to dates...</Button>
+    {/if}
   {/snippet}
 </EditableModal>
+
+<CopyEventModal bind:showModal={showCopyModal} onConfirm={onCopyToDates} />

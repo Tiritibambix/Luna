@@ -11,12 +11,14 @@
     date: Date;
     onDayClick?: (date: Date) => any;
     smaller?: boolean;
+    isSelected?: (date: Date) => boolean;
   }
 
   let {
     date = $bindable(new Date()),
     onDayClick = NoOp,
     smaller = false,
+    isSelected = () => false,
   }: Props = $props();
 
   const settings = getSettings();
@@ -127,6 +129,12 @@
   button.day.otherMonth {
     opacity: 0.5;
   }
+
+  button.day.selected {
+    background-color: colors.$backgroundAccent;
+    color: colors.$foregroundAccent !important;
+    --barFocusIndicatorColor: #{colors.$barFocusIndicatorColorAlt};
+  }
 </style>
 
 {#if settings.userSettings[UserSettingKeys.AnimateSmallCalendarSwipe]}
@@ -153,6 +161,7 @@
         class="day"
         class:sunday={day.getDay() == 0}
         class:today={isSameDay(day, today)}
+        class:selected={isSelected(day)}
         class:otherMonth={day.getMonth() != currentDate.getMonth()}
         type="button"
         onclick={() => (onDayClick(day))}
