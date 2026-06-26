@@ -126,7 +126,7 @@
   }
 
   div.background.today {
-    border-color: colors.$backgroundAccent;
+    border-color: colors.$foregroundPrimary;
   }
 
   span.top {
