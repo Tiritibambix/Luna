@@ -221,11 +221,11 @@ func (calendar *IcalCalendar) GetEvent(settings types.EventSettings, q types.Dat
 
 /* Ical calendar is read-only */
 
-func (calendar *IcalCalendar) AddEvent(name string, desc string, color *types.Color, date *types.EventDate, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
+func (calendar *IcalCalendar) AddEvent(name string, desc string, location string, color *types.Color, date *types.EventDate, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
 	return nil, errors.New().Status(http.StatusMethodNotAllowed)
 }
 
-func (calendar *IcalCalendar) EditEvent(event types.Event, name string, desc string, color *types.Color, date *types.EventDate, override bool, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
+func (calendar *IcalCalendar) EditEvent(event types.Event, name string, desc string, location string, color *types.Color, date *types.EventDate, override bool, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
 	if override {
 		anyOverrides := false
 		if name != "" {
@@ -236,13 +236,17 @@ func (calendar *IcalCalendar) EditEvent(event types.Event, name string, desc str
 			event.SetDesc(desc)
 			anyOverrides = true
 		}
+		if location != "" {
+			event.SetLocation(location)
+			anyOverrides = true
+		}
 		if color != nil && !color.IsEmpty() {
 			event.SetColor(color)
 			anyOverrides = true
 		}
 
 		if anyOverrides {
-			q.SetEventOverrides(event.GetId(), name, desc, color)
+			q.SetEventOverrides(event.GetId(), name, desc, location, color)
 			return event, nil
 		} else {
 			q.DeleteEventOverrides(event.GetId())

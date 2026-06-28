@@ -14,6 +14,7 @@ import (
 type GoogleEvent struct {
 	name       string
 	desc       string
+	location   string
 	color      *types.Color
 	overridden bool
 	settings   *GoogleEventSettings
@@ -101,6 +102,7 @@ func (calendar *GoogleCalendar) eventFromGoogle(googleEvent *google.Event, q typ
 	event := &GoogleEvent{
 		name:       googleEvent.Name,
 		desc:       googleEvent.Description,
+		location:   googleEvent.Location,
 		color:      col,
 		overridden: false,
 		settings:   settings.Clone(),
@@ -149,6 +151,14 @@ func (event *GoogleEvent) SetDesc(desc string) {
 	event.desc = desc
 }
 
+func (event *GoogleEvent) GetLocation() string {
+	return event.location
+}
+
+func (event *GoogleEvent) SetLocation(location string) {
+	event.location = location
+}
+
 func (event *GoogleEvent) GetCalendar() types.Calendar {
 	return event.calendar
 }
@@ -185,6 +195,7 @@ func (event *GoogleEvent) Clone() types.Event {
 	return &GoogleEvent{
 		name:       event.name,
 		desc:       event.desc,
+		location:   event.location,
 		color:      event.color.Clone(),
 		overridden: event.overridden,
 		settings:   event.settings.Clone(),

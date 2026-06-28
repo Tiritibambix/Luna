@@ -17,6 +17,8 @@ type Event interface {
 	SetName(name string)
 	GetDesc() string
 	SetDesc(desc string)
+	GetLocation() string
+	SetLocation(location string)
 	GetColor() *Color
 	SetColor(color *Color)
 	GetOverridden() bool

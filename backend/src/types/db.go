@@ -19,6 +19,7 @@ type EventExtendedDatabaseEntry struct {
 	Settings    []byte `db:"settings" encrypted:"false"`
 	Title       string `db:"title" encrypted:"false"`
 	Description string `db:"description" encrypted:"false"`
+	Location    string `db:"location" encrypted:"false"`
 	Color       []byte `db:"color" encrypted:"false"`
 	Overridden  bool   `db:"overridden" encrypted:"false"`
 }
@@ -64,6 +65,6 @@ type DatabaseQueries interface {
 
 	SetCalendarOverrides(calendarId ID, name string, desc string, color *Color) *errors.ErrorTrace
 	DeleteCalendarOverrides(calendarId ID) *errors.ErrorTrace
-	SetEventOverrides(eventId ID, name string, desc string, color *Color) *errors.ErrorTrace
+	SetEventOverrides(eventId ID, name string, desc string, location string, color *Color) *errors.ErrorTrace
 	DeleteEventOverrides(eventId ID) *errors.ErrorTrace
 }

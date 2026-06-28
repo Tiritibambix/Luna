@@ -35,6 +35,7 @@ var IcalProductId string = "-//opisek.net//Luna//EN"
 type IcalEventProps struct {
 	Name         string
 	Desc         string
+	Location     string
 	Color        *types.Color
 	Uid          string
 	RecurrenceId string
@@ -54,6 +55,14 @@ func ParseIcalEvent(props *ical.Props) (*IcalEventProps, bool, error) {
 		descStr = UnespaceIcalString(description.Value)
 	} else {
 		descStr = ""
+	}
+
+	location := props.Get(ical.PropLocation)
+	var locationStr string
+	if location != nil {
+		locationStr = UnespaceIcalString(location.Value)
+	} else {
+		locationStr = ""
 	}
 
 	// Color
@@ -144,6 +153,7 @@ func ParseIcalEvent(props *ical.Props) (*IcalEventProps, bool, error) {
 	parsedProps := &IcalEventProps{
 		Name:         summaryStr,
 		Desc:         descStr,
+		Location:     locationStr,
 		Color:        color,
 		Uid:          uid.Value,
 		RecurrenceId: recurrenceIdStr,

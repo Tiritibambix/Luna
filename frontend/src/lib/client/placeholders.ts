@@ -109,6 +109,7 @@ export const EmptyEvent: EventModel = {
   calendar: '',
   name: '',
   desc: '',
+  location: '',
   color: '',
   date: {
     start: PlaceholderDate,
@@ -124,6 +125,7 @@ export const EmptyEvent: EventModel = {
 export const AllChangesEvent: EventModelChanges = {
   name: true,
   desc: true,
+  location: true,
   color: true,
   date: true
 }
@@ -131,6 +133,7 @@ export const AllChangesEvent: EventModelChanges = {
 export const NoChangesEvent: EventModelChanges = {
   name: false,
   desc: false,
+  location: false,
   color: false,
   date: false
 }

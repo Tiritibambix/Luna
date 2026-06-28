@@ -44,6 +44,7 @@ func (q *Tables) InitializeEventOverridesTable() error {
 			eventid UUID UNIQUE REFERENCES events(id) ON DELETE CASCADE,
 			title TEXT,
 			description TEXT,
+			location TEXT,
 			color BYTEA
 		);
 	`)

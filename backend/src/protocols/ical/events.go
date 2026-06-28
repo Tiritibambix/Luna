@@ -14,6 +14,7 @@ import (
 type IcalEvent struct {
 	name       string
 	desc       string
+	location   string
 	color      *types.Color
 	overridden bool
 	settings   *IcalEventSettings
@@ -51,6 +52,7 @@ func (calendar *IcalCalendar) eventFromIcal(props *ical.Props) (*IcalEvent, *err
 	event := &IcalEvent{
 		name:       parsedProps.Name,
 		desc:       parsedProps.Desc,
+		location:   parsedProps.Location,
 		color:      parsedProps.Color,
 		overridden: false,
 		settings: &IcalEventSettings{
@@ -100,6 +102,14 @@ func (event *IcalEvent) SetDesc(desc string) {
 	event.desc = desc
 }
 
+func (event *IcalEvent) GetLocation() string {
+	return event.location
+}
+
+func (event *IcalEvent) SetLocation(location string) {
+	event.location = location
+}
+
 func (event *IcalEvent) GetCalendar() types.Calendar {
 	return event.calendar
 }
@@ -136,6 +146,7 @@ func (event *IcalEvent) Clone() types.Event {
 	return &IcalEvent{
 		name:       event.name,
 		desc:       event.desc,
+		location:   event.location,
 		color:      event.color.Clone(),
 		overridden: event.overridden,
 		settings:   event.settings.Clone(),

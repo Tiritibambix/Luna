@@ -251,7 +251,7 @@ func (calendar *CaldavCalendar) GetEvent(settings types.EventSettings, q types.D
 	return cal, nil
 }
 
-func setEventProps(cal *ical.Calendar, id string, name string, desc string, color *types.Color, date *types.EventDate) *errors.ErrorTrace {
+func setEventProps(cal *ical.Calendar, id string, name string, desc string, location string, color *types.Color, date *types.EventDate) *errors.ErrorTrace {
 	var event *ical.Event = nil
 	for _, child := range cal.Children {
 		if child.Name == "VEVENT" {
@@ -273,6 +273,12 @@ func setEventProps(cal *ical.Calendar, id string, name string, desc string, colo
 		event.Props.SetText(ical.PropDescription, common.EscapeIcalString(desc))
 	} else {
 		event.Props.Del(ical.PropDescription)
+	}
+
+	if location != "" {
+		event.Props.SetText(ical.PropLocation, common.EscapeIcalString(location))
+	} else {
+		event.Props.Del(ical.PropLocation)
 	}
 
 	if color.IsEmpty() {
@@ -327,11 +333,11 @@ func setEventProps(cal *ical.Calendar, id string, name string, desc string, colo
 	return nil
 }
 
-func (calendar *CaldavCalendar) AddEvent(name string, desc string, color *types.Color, date *types.EventDate, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
+func (calendar *CaldavCalendar) AddEvent(name string, desc string, location string, color *types.Color, date *types.EventDate, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
 	id := types.RandomId()
 	cal := ical.NewCalendar()
 
-	tr := setEventProps(cal, id.String(), name, desc, color, date)
+	tr := setEventProps(cal, id.String(), name, desc, location, color, date)
 	if tr != nil {
 		return nil, tr.Status(http.StatusBadRequest).
 			Append(errors.LvlWordy, "Could not set iCal properties").
@@ -364,13 +370,13 @@ func (calendar *CaldavCalendar) AddEvent(name string, desc string, color *types.
 	return finishedEvent, nil
 }
 
-func (calendar *CaldavCalendar) EditEvent(originalEvent types.Event, name string, desc string, color *types.Color, date *types.EventDate, _ bool, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
+func (calendar *CaldavCalendar) EditEvent(originalEvent types.Event, name string, desc string, location string, color *types.Color, date *types.EventDate, _ bool, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
 	originalCaldavEvent := originalEvent.(*CaldavEvent)
 	uid := originalCaldavEvent.GetSettings().(*CaldavEventSettings).Uid
 	originalRawEvent := originalCaldavEvent.settings.rawEvent
 	cal := originalRawEvent.Data
 
-	tr := setEventProps(cal, uid, name, desc, color, date)
+	tr := setEventProps(cal, uid, name, desc, location, color, date)
 	if tr != nil {
 		return nil, tr.Status(http.StatusBadRequest).
 			Append(errors.LvlWordy, "Could not set iCal properties").

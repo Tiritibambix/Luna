@@ -54,10 +54,10 @@ func (q *Queries) insertEvents(events []types.Event) *errors.ErrorTrace {
 func (q *Queries) getEventEntries(events []types.Event) ([]*types.EventExtendedDatabaseEntry, *errors.ErrorTrace) {
 	query := fmt.Sprintf(
 		`
-		SELECT id, calendar, settings, COALESCE(title, '') as title, COALESCE(description, '') as description, color, COALESCE(overridden, false) AS overridden
+		SELECT id, calendar, settings, COALESCE(title, '') as title, COALESCE(description, '') as description, COALESCE(location, '') as location, color, COALESCE(overridden, false) AS overridden
 		FROM events
 		LEFT OUTER JOIN (
-			SELECT eventid, title, description, color, true AS overridden
+			SELECT eventid, title, description, location, color, true AS overridden
 			FROM event_overrides
 		) AS overrides ON events.id = overrides.eventid
 		WHERE id IN (
@@ -83,7 +83,7 @@ func (q *Queries) getEventEntries(events []types.Event) ([]*types.EventExtendedD
 	for rows.Next() {
 		entry := &types.EventExtendedDatabaseEntry{}
 
-		err := rows.Scan(&entry.Id, &entry.Calendar, &entry.Settings, &entry.Title, &entry.Description, &entry.Color, &entry.Overridden)
+		err := rows.Scan(&entry.Id, &entry.Calendar, &entry.Settings, &entry.Title, &entry.Description, &entry.Location, &entry.Color, &entry.Overridden)
 		if err != nil {
 			return nil, errors.New().Status(http.StatusInternalServerError).
 				AddErr(errors.LvlDebug, err).
@@ -124,6 +124,9 @@ func (q *Queries) OverrideEvents(events []types.Event) ([]types.Event, *errors.E
 			}
 			if dbEvent.Description != "" {
 				event.SetDesc(dbEvent.Description)
+			}
+			if dbEvent.Location != "" {
+				event.SetLocation(dbEvent.Location)
 			}
 			if dbEvent.Color != nil {
 				event.SetColor(types.ColorFromBytes(dbEvent.Color))
@@ -293,7 +296,7 @@ func (q *Queries) DeleteEvent(userId types.ID, eventId types.ID) *errors.ErrorTr
 	}
 }
 
-func (q *Queries) SetEventOverrides(eventId types.ID, name string, desc string, color *types.Color) *errors.ErrorTrace {
+func (q *Queries) SetEventOverrides(eventId types.ID, name string, desc string, location string, color *types.Color) *errors.ErrorTrace {
 	columns := []string{}
 	params := []any{eventId.UUID()}
 
@@ -304,6 +307,10 @@ func (q *Queries) SetEventOverrides(eventId types.ID, name string, desc string, 
 	if desc != "" {
 		columns = append(columns, "description")
 		params = append(params, desc)
+	}
+	if location != "" {
+		columns = append(columns, "location")
+		params = append(params, location)
 	}
 	if color != nil {
 		columns = append(columns, "color")

@@ -3,6 +3,7 @@ type EventModel = {
   calendar: string;
   name: string;
   desc: string;
+  location: string;
   color: string;
   date: {
     start: Date;
@@ -18,6 +19,7 @@ type EventModel = {
 type EventModelChanges = {
   name: boolean;
   desc: boolean;
+  location: boolean;
   color: boolean;
   date: boolean;
 }

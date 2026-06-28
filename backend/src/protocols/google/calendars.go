@@ -253,7 +253,7 @@ func (calendar *GoogleCalendar) GetEvent(settings types.EventSettings, q types.D
 	return casted, nil
 }
 
-func (calendar *GoogleCalendar) AddEvent(name string, desc string, color *types.Color, date *types.EventDate, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
+func (calendar *GoogleCalendar) AddEvent(name string, desc string, location string, color *types.Color, date *types.EventDate, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
 	var tr *errors.ErrorTrace
 
 	var colId string
@@ -298,6 +298,7 @@ func (calendar *GoogleCalendar) AddEvent(name string, desc string, color *types.
 	event := google.Event{
 		Name:        name,
 		Description: desc,
+		Location:    location,
 		ColorId:     colId,
 		Start:       start,
 		End:         end,
@@ -327,7 +328,7 @@ func (calendar *GoogleCalendar) AddEvent(name string, desc string, color *types.
 	return casted, nil
 }
 
-func (calendar *GoogleCalendar) EditEvent(originalEvent types.Event, name string, desc string, color *types.Color, date *types.EventDate, _ bool, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
+func (calendar *GoogleCalendar) EditEvent(originalEvent types.Event, name string, desc string, location string, color *types.Color, date *types.EventDate, _ bool, q types.DatabaseQueries) (types.Event, *errors.ErrorTrace) {
 	var tr *errors.ErrorTrace
 
 	var colId string
@@ -372,6 +373,7 @@ func (calendar *GoogleCalendar) EditEvent(originalEvent types.Event, name string
 	event := google.Event{
 		Name:        name,
 		Description: desc,
+		Location:    location,
 		ColorId:     colId,
 		Start:       start,
 		End:         end,

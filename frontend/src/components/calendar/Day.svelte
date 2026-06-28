@@ -89,7 +89,7 @@
 
     repository.editEvent(
       modifiedEvent,
-      { name: false, desc: false, color: false, date: true },
+      { name: false, desc: false, location: false, color: false, date: true },
       repository.getEventSourceType(modifiedEvent) === "ical"
     ).catch((err) => {
       queueNotification(ColorKeys.Danger, `Could not move event ${modifiedEvent.name}: ${err.message}`);

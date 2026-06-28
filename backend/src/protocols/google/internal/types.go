@@ -52,6 +52,7 @@ type Event struct {
 	Id                string         `json:"id,omitempty"`
 	Name              string         `json:"summary"`
 	Description       string         `json:"description,omitempty"`
+	Location          string         `json:"location,omitempty"`
 	ColorId           string         `json:"colorId,omitempty"`
 	Start             TimeDefinition `json:"start"`
 	End               TimeDefinition `json:"end"`

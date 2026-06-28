@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { TextIcon } from "lucide-svelte";
+  import { MapPin, TextIcon } from "lucide-svelte";
 
   import { GetEventColor, GetEventHoverColor, GetEventRGB, isDark } from "$lib/common/colors";
   import { passIfEnter } from "$lib/common/inputs";
@@ -241,6 +241,11 @@
     {#if (event.desc && event.desc != "")}
       <span class="icons">
         <TextIcon size={12}/>
+      </span>
+    {/if}
+    {#if (event.location && event.location != "")}
+      <span class="icons">
+        <MapPin size={12}/>
       </span>
     {/if}
   </div>

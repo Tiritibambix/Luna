@@ -180,6 +180,7 @@ export class Repository {
     const formData = new FormData();
     if (changes.name) formData.set("name", event.name);
     if (changes.desc) formData.set("desc", event.desc);
+    if (changes.location) formData.set("location", event.location);
     if (changes.date) {
       if (event.date.allDay) {
         const start = new Date(event.date.start.getTime() - (event.date.start.getTimezoneOffset() * 60000));

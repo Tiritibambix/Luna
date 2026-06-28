@@ -15,6 +15,7 @@ import (
 type CaldavEvent struct {
 	name       string
 	desc       string
+	location   string
 	color      *types.Color
 	overridden bool
 	settings   *CaldavEventSettings
@@ -76,6 +77,7 @@ func (calendar *CaldavCalendar) eventFromCaldav(obj *caldav.CalendarObject, q ty
 	event := &CaldavEvent{
 		name:       parsedProps.Name,
 		desc:       parsedProps.Desc,
+		location:   parsedProps.Location,
 		color:      parsedProps.Color,
 		overridden: false,
 		settings: &CaldavEventSettings{
@@ -90,7 +92,7 @@ func (calendar *CaldavCalendar) eventFromCaldav(obj *caldav.CalendarObject, q ty
 	}
 
 	if mustUpdate {
-		calendar.EditEvent(event, parsedProps.Name, parsedProps.Desc, parsedProps.Color, parsedProps.EventDate, false, q)
+		calendar.EditEvent(event, parsedProps.Name, parsedProps.Desc, parsedProps.Location, parsedProps.Color, parsedProps.EventDate, false, q)
 		// TODO: we might want to catch errors and display them as notifications here
 	}
 
@@ -131,6 +133,14 @@ func (event *CaldavEvent) SetDesc(desc string) {
 	event.desc = desc
 }
 
+func (event *CaldavEvent) GetLocation() string {
+	return event.location
+}
+
+func (event *CaldavEvent) SetLocation(location string) {
+	event.location = location
+}
+
 func (event *CaldavEvent) GetCalendar() types.Calendar {
 	return event.calendar
 }
@@ -167,6 +177,7 @@ func (event *CaldavEvent) Clone() types.Event {
 	return &CaldavEvent{
 		name:       event.name,
 		desc:       event.desc,
+		location:   event.location,
 		color:      event.color.Clone(),
 		overridden: event.overridden,
 		settings:   event.settings.Clone(),

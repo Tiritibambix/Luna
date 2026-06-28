@@ -54,6 +54,7 @@
       calendar: "",
       name: "",
       desc: "",
+      location: "",
       color: "",
       date: {
         start: start,
@@ -84,6 +85,7 @@
       calendar: original.calendar,
       name: original.name,
       desc: original.desc,
+      location: original.location,
       color: original.color,
       date: {
         start: new Date(original.date.start),
@@ -146,6 +148,7 @@
       const changes = {
         name: event.name != originalEvent.name,
         desc: event.desc != originalEvent.desc,
+        location: event.location != originalEvent.location,
         color: event.color != originalEvent.color,
         date: !deepEquality(event.date, originalEvent.date)
       };
@@ -194,6 +197,7 @@
       calendar: original.calendar,
       name: original.name,
       desc: original.desc,
+      location: original.location,
       color: original.color,
       date: {
         start: start,
@@ -262,6 +266,9 @@
     {/if}
     {#if editMode || event.desc}
       <TextInput bind:value={event.desc} name="desc" placeholder="Description" multiline={true} editable={editMode} />
+    {/if}
+    {#if editMode || event.location}
+      <TextInput bind:value={event.location} name="location" placeholder="Location" editable={editMode} />
     {/if}
     {#if editMode}
         <ToggleInput bind:value={event.date.allDay} name="all_day" description="All Day"/>
