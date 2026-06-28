@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import { Pencil, Trash2 } from "lucide-svelte";
+
   import Loader from "../decoration/Loader.svelte";
   import Button from "../interactive/Button.svelte";
   import ConfirmationModal from "./ConfirmationModal.svelte";
@@ -139,10 +141,14 @@
       <Button onClick={cancelEdit} color={ColorKeys.Danger}>Cancel</Button>
     {:else}
       {#if editable}
-        <Button onClick={startEditMode} color={ColorKeys.Accent}>Edit</Button>
+        <Button onClick={startEditMode} color={ColorKeys.Accent} compact={true} title="Edit">
+          <Pencil size={16}/>
+        </Button>
       {/if}
       {#if deletable}
-        <Button onClick={showDeleteModal} color={ColorKeys.Danger}>Delete</Button>
+        <Button onClick={showDeleteModal} color={ColorKeys.Danger} compact={true} title="Delete">
+          <Trash2 size={16}/>
+        </Button>
       {/if}
       {#if !editable && !deletable}
         <Button onClick={hideModal}>Close</Button>

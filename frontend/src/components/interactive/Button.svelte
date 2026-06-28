@@ -10,6 +10,7 @@
     compact?: boolean;
     enabled?: boolean;
     href?: string;
+    title?: string;
     children?: Snippet;
   }
 
@@ -20,6 +21,7 @@
     compact = false,
     enabled = true,
     href = "",
+    title = "",
     children
   }: Props = $props();
 </script>
@@ -99,6 +101,8 @@
     onmouseleave={(e) => {(e.target as HTMLButtonElement).blur()}}
     class:disabled={!enabled}
     href={enabled ? href : "#"}
+    title={title || undefined}
+    aria-label={title || undefined}
     onmousedown={addRipple}
     use:focusIndicator
   >
@@ -118,6 +122,8 @@
     type={type}
     disabled={!enabled}
     class:disabled={!enabled}
+    title={title || undefined}
+    aria-label={title || undefined}
     onmousedown={addRipple}
     use:focusIndicator
   >

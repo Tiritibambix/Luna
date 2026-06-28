@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Copy } from "lucide-svelte";
+
   import Button from "../interactive/Button.svelte";
   import ColorInput from "../forms/ColorInput.svelte";
   import CopyEventModal from "./CopyEventModal.svelte";
@@ -286,7 +288,9 @@
       <Button color={ColorKeys.Accent} onClick={resetOverrides}>Reset</Button>
     {/if}
     {#if event != EmptyEvent && !editMode && canCopyEvent}
-      <Button color={ColorKeys.Accent} onClick={() => showCopyModal(event.date.start)}>Copy to dates...</Button>
+      <Button color={ColorKeys.Accent} onClick={() => showCopyModal(event.date.start)} compact={true} title="Copy to dates...">
+        <Copy size={16}/>
+      </Button>
     {/if}
   {/snippet}
 </EditableModal>
