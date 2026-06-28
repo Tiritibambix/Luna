@@ -141,13 +141,13 @@
       <Button onClick={cancelEdit} color={ColorKeys.Danger}>Cancel</Button>
     {:else}
       {#if editable}
-        <Button onClick={startEditMode} color={ColorKeys.Accent} compact={true} title="Edit">
-          <Pencil size={16}/>
+        <Button onClick={startEditMode} plain={true} title="Edit">
+          <Pencil size={18}/>
         </Button>
       {/if}
       {#if deletable}
-        <Button onClick={showDeleteModal} color={ColorKeys.Danger} compact={true} title="Delete">
-          <Trash2 size={16}/>
+        <Button onClick={showDeleteModal} plain={true} title="Delete">
+          <Trash2 size={18}/>
         </Button>
       {/if}
       {#if !editable && !deletable}

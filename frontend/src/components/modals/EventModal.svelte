@@ -288,8 +288,8 @@
       <Button color={ColorKeys.Accent} onClick={resetOverrides}>Reset</Button>
     {/if}
     {#if event != EmptyEvent && !editMode && canCopyEvent}
-      <Button color={ColorKeys.Accent} onClick={() => showCopyModal(event.date.start)} compact={true} title="Copy to dates...">
-        <Copy size={16}/>
+      <Button plain={true} onClick={() => showCopyModal(event.date.start)} title="Copy to dates...">
+        <Copy size={18}/>
       </Button>
     {/if}
   {/snippet}

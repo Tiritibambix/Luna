@@ -8,6 +8,7 @@
     color?: ColorKeys;
     type?: "button" | "submit";
     compact?: boolean;
+    plain?: boolean;
     enabled?: boolean;
     href?: string;
     title?: string;
@@ -19,6 +20,7 @@
     color = ColorKeys.Neutral,
     type = "button",
     compact = false,
+    plain = false,
     enabled = true,
     href = "",
     title = "",
@@ -87,17 +89,28 @@
       color: color-mix(in srgb, map.get($val, "foreground") 50%, transparent);
     }
   }
+
+  button.plain, a.plain {
+    background-color: transparent;
+    color: colors.$foregroundPrimary;
+    min-width: unset;
+    padding: dimensions.$gapSmaller;
+  }
+  button.plain.disabled, a.plain.disabled {
+    color: color-mix(in srgb, colors.$foregroundPrimary 50%, transparent);
+  }
 </style>
 
 {#if href !== ""}
   <a
-    class:success={color == ColorKeys.Success}
-    class:warning={color == ColorKeys.Warning}
-    class:danger={color == ColorKeys.Danger}
-    class:accent={color == ColorKeys.Accent}
-    class:neutral={color == ColorKeys.Neutral}
-    class:inherit={color == ColorKeys.Inherit}
+    class:success={!plain && color == ColorKeys.Success}
+    class:warning={!plain && color == ColorKeys.Warning}
+    class:danger={!plain && color == ColorKeys.Danger}
+    class:accent={!plain && color == ColorKeys.Accent}
+    class:neutral={!plain && color == ColorKeys.Neutral}
+    class:inherit={!plain && color == ColorKeys.Inherit}
     class:compact={compact}
+    class:plain={plain}
     onmouseleave={(e) => {(e.target as HTMLButtonElement).blur()}}
     class:disabled={!enabled}
     href={enabled ? href : "#"}
@@ -110,13 +123,14 @@
   </a>
 {:else}
   <button
-    class:success={color == ColorKeys.Success}
-    class:warning={color == ColorKeys.Warning}
-    class:danger={color == ColorKeys.Danger}
-    class:accent={color == ColorKeys.Accent}
-    class:neutral={color == ColorKeys.Neutral}
-    class:inherit={color == ColorKeys.Inherit}
+    class:success={!plain && color == ColorKeys.Success}
+    class:warning={!plain && color == ColorKeys.Warning}
+    class:danger={!plain && color == ColorKeys.Danger}
+    class:accent={!plain && color == ColorKeys.Accent}
+    class:neutral={!plain && color == ColorKeys.Neutral}
+    class:inherit={!plain && color == ColorKeys.Inherit}
     class:compact={compact}
+    class:plain={plain}
     onclick={onClick}
     onmouseleave={(e) => {(e.target as HTMLButtonElement).blur()}}
     type={type}
